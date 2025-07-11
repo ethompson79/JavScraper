@@ -4,11 +4,7 @@ using MediaBrowser.Controller.Net;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Services;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 namespace Emby.Plugins.JavScraper.Services
 {
@@ -41,21 +37,9 @@ namespace Emby.Plugins.JavScraper.Services
         /// <value>The request context.</value>
         public IRequest Request { get; set; }
 
-        public ImageService(
-#if __JELLYFIN__
-            ILoggerFactory logManager,
-#else
-            ILogManager logManager,
-            ImageProxyService imageProxyService,
-#endif
-            IHttpResultFactory resultFactory
-                           )
+        public ImageService(ILogManager logManager, IHttpResultFactory resultFactory)
         {
-#if __JELLYFIN__
             imageProxyService = Plugin.Instance.ImageProxyService;
-#else
-            this.imageProxyService = imageProxyService;
-#endif
             this.resultFactory = resultFactory;
             this.logger = logManager.CreateLogger<ImageService>();
         }

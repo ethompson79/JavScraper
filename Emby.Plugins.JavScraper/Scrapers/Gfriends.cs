@@ -1,11 +1,7 @@
 ﻿using Emby.Plugins.JavScraper.Http;
 using MediaBrowser.Model.Serialization;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using System;
 using System.Collections.Generic;
@@ -34,13 +30,7 @@ namespace Emby.Plugins.JavScraper.Scrapers
         private readonly SemaphoreSlim locker = new SemaphoreSlim(1, 1);
         private const string base_url = "https://raw.githubusercontent.com/xinxin8816/gfriends/master/";
 
-        public Gfriends(
-#if __JELLYFIN__
-            ILoggerFactory logManager
-#else
-            ILogManager logManager
-#endif
-            , IJsonSerializer jsonSerializer)
+        public Gfriends(ILogManager logManager, IJsonSerializer jsonSerializer)
         {
             client = new HttpClientEx(client => client.BaseAddress = new Uri(base_url));
             this.log = logManager.CreateLogger<Gfriends>();

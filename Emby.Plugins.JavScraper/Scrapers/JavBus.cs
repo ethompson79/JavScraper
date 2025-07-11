@@ -1,10 +1,6 @@
 ﻿using Emby.Plugins.JavScraper.Http;
 using HtmlAgilityPack;
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,13 +23,7 @@ namespace Emby.Plugins.JavScraper.Scrapers
         /// 构造
         /// </summary>
         /// <param name="handler"></param>
-        public JavBus(
-#if __JELLYFIN__
-            ILoggerFactory logManager
-#else
-            ILogManager logManager
-#endif
-            )
+        public JavBus(ILogManager logManager)
             : base("https://www.javbus.com/", logManager.CreateLogger<JavBus>())
         {
         }

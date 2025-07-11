@@ -14,11 +14,7 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Serialization;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 namespace Emby.Plugins.JavScraper
 {
@@ -33,32 +29,19 @@ namespace Emby.Plugins.JavScraper
 
         public Gfriends Gfriends { get; }
 
-        public JavPersonTask(
-#if __JELLYFIN__
-            ILoggerFactory logManager,
-#else
-            ILogManager logManager,
-            ImageProxyService imageProxyService,
-            Gfriends gfriends,
-#endif
-            ILibraryManager libraryManager,
+        public JavPersonTask(ILogManager logManager, ILibraryManager libraryManager,
             IJsonSerializer _jsonSerializer, IApplicationPaths appPaths,
-
-            IProviderManager providerManager,
-            IFileSystem fileSystem)
+            IProviderManager providerManager, IFileSystem fileSystem)
         {
             _logger = logManager.CreateLogger<JavPersonTask>();
             this.libraryManager = libraryManager;
             this._jsonSerializer = _jsonSerializer;
-#if __JELLYFIN__
-            imageProxyService = Plugin.Instance.ImageProxyService;
-            Gfriends = new Gfriends(logManager, _jsonSerializer);
-#else
-            this.imageProxyService = imageProxyService;
-            Gfriends = gfriends;
-#endif
             this.providerManager = providerManager;
             this.fileSystem = fileSystem;
+
+            // 从Plugin实例获取服务
+            imageProxyService = Plugin.Instance.ImageProxyService;
+            Gfriends = new Gfriends(logManager, _jsonSerializer);
         }
 
         public string Name => Plugin.NAME + ": 采集缺失的女优头像和信息";

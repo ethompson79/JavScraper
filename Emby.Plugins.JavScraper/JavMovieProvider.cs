@@ -14,11 +14,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
@@ -36,30 +32,18 @@ namespace Emby.Plugins.JavScraper
 
         public Gfriends Gfriends { get; }
 
-        public JavMovieProvider(
-#if __JELLYFIN__
-            ILoggerFactory logManager,
-#else
-            ILogManager logManager,
-            TranslationService translationService,
-            ImageProxyService imageProxyService,
-            Gfriends gfriends,
-#endif
-            IProviderManager providerManager, IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
+        public JavMovieProvider(ILogManager logManager, IProviderManager providerManager,
+            IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
         {
             _logger = logManager.CreateLogger<JavMovieProvider>();
-#if __JELLYFIN__
-            translationService = Plugin.Instance.TranslationService;
-            imageProxyService = Plugin.Instance.ImageProxyService;
-            Gfriends = new Gfriends(logManager, _jsonSerializer);
-#else
-            this.translationService = translationService;
-            this.imageProxyService = imageProxyService;
-            Gfriends = gfriends;
-#endif
             this.providerManager = providerManager;
             _jsonSerializer = jsonSerializer;
             _appPaths = appPaths;
+
+            // 从Plugin实例获取服务
+            translationService = Plugin.Instance.TranslationService;
+            imageProxyService = Plugin.Instance.ImageProxyService;
+            Gfriends = new Gfriends(logManager, jsonSerializer);
         }
 
         public int Order => 4;
@@ -219,12 +203,8 @@ namespace Emby.Plugins.JavScraper
             if (m.CommunityRating >= 0 && m.CommunityRating <= 10)
                 metadataResult.Item.CommunityRating = m.CommunityRating;
 
-#if !__JELLYFIN__
             if (!string.IsNullOrWhiteSpace(m.Set))
                 metadataResult.Item.AddCollection(m.Set);
-#else
-            metadataResult.Item.CollectionName = m.Set;
-#endif
             if (m.Genres?.Any() == true)
                 foreach (var genre in m.Genres.Where(o => !string.IsNullOrWhiteSpace(o)).Distinct())
                     metadataResult.Item.AddGenre(genre);
@@ -242,13 +222,7 @@ namespace Emby.Plugins.JavScraper
             var person_image_type = cut_persion_image ? ImageType.Primary : ImageType.Backdrop;
 
             //添加人员
-            async Task AddPerson(string personName,
-#if __JELLYFIN__
-                string
-#else
-                PersonType
-#endif
-                personType)
+            async Task AddPerson(string personName, PersonType personType)
             {
                 var person = new PersonInfo
                 {

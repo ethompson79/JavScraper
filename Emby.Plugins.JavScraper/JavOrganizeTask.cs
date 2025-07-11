@@ -13,11 +13,7 @@ using System.IO;
 using MediaBrowser.Controller.Entities.Movies;
 using Emby.Plugins.JavScraper.Configuration;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 namespace Emby.Plugins.JavScraper
 {
@@ -36,13 +32,8 @@ namespace Emby.Plugins.JavScraper
         private readonly IFileSystem _fileSystem;
         private readonly ILogger _logger;
 
-        public JavOrganizeTask(
-#if __JELLYFIN__
-            ILoggerFactory logManager
-#else
-            ILogManager logManager
-#endif
-            , ILibraryManager libraryManager, IJsonSerializer _jsonSerializer, IApplicationPaths appPaths,
+        public JavOrganizeTask(ILogManager logManager, ILibraryManager libraryManager,
+            IJsonSerializer _jsonSerializer, IApplicationPaths appPaths,
             IProviderManager providerManager,
             ILibraryMonitor libraryMonitor,
             IFileSystem fileSystem)
@@ -173,11 +164,7 @@ namespace Emby.Plugins.JavScraper
 
             if (jav?.Actors?.Any() != true || string.IsNullOrWhiteSpace(jav.Director))
             {
-#if __JELLYFIN__
-                var persons = _libraryManager.GetPeople(movie);
-#else
                 var persons = _libraryManager.GetItemPeople(movie);
-#endif
 
                 if (persons?.Any() == true)
                 {
@@ -203,13 +190,8 @@ namespace Emby.Plugins.JavScraper
             if (string.IsNullOrWhiteSpace(jav.OriginalTitle) && !string.IsNullOrWhiteSpace(movie.OriginalTitle))
                 jav.OriginalTitle = movie.OriginalTitle;
 
-#if !__JELLYFIN__
             if (string.IsNullOrWhiteSpace(jav.Set) && !string.IsNullOrWhiteSpace(movie.Collections?.FirstOrDefault()?.Name))
                 jav.Set = movie.Collections[0].Name;
-#else
-            if (string.IsNullOrWhiteSpace(jav.Set) && !string.IsNullOrWhiteSpace(movie.CollectionName))
-                jav.Set = movie.CollectionName;
-#endif
 
             if (jav.Date == null && movie.PremiereDate != null)
                 jav.Date = movie.PremiereDate.Value.Date.ToString("yyyy-MM-dd");
@@ -366,11 +348,7 @@ namespace Emby.Plugins.JavScraper
 
             try
             {
-                return _libraryManager.IsVideoFile(fileInfo.FullName
-#if !__JELLYFIN__
-                    .AsSpan()
-#endif
-                    ) && fileInfo.Length >= minFileBytes;
+                return _libraryManager.IsVideoFile(fileInfo.FullName.AsSpan()) && fileInfo.Length >= minFileBytes;
             }
             catch (Exception ex)
             {
@@ -472,15 +450,7 @@ namespace Emby.Plugins.JavScraper
 
         private bool IsPathAlreadyInMediaLibrary(string path, List<string> libraryFolderPaths)
         {
-            return libraryFolderPaths.Any(i => string.Equals(i, path, StringComparison.Ordinal) || _fileSystem.ContainsSubPath(i
-#if !__JELLYFIN__
-                .AsSpan()
-#endif
-                , path
-#if !__JELLYFIN__
-                .AsSpan()
-#endif
-                ));
+            return libraryFolderPaths.Any(i => string.Equals(i, path, StringComparison.Ordinal) || _fileSystem.ContainsSubPath(i.AsSpan(), path.AsSpan()));
         }
 
         /// <summary>

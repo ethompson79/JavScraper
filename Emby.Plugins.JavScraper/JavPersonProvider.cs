@@ -13,11 +13,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
@@ -39,31 +35,19 @@ namespace Emby.Plugins.JavScraper
 
         public Gfriends Gfriends { get; }
 
-        public JavPersonProvider(
-#if __JELLYFIN__
-            ILoggerFactory logManager,
-#else
-            ILogManager logManager,
-            TranslationService translationService,
-            ImageProxyService imageProxyService,
-            Gfriends gfriends,
-#endif
-            IProviderManager providerManager, IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
+        public JavPersonProvider(ILogManager logManager, IProviderManager providerManager,
+            IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
         {
             _logger = logManager.CreateLogger<JavPersonProvider>();
-#if __JELLYFIN__
-            translationService = Plugin.Instance.TranslationService;
-            imageProxyService = Plugin.Instance.ImageProxyService;
-            Gfriends = new Gfriends(logManager, _jsonSerializer);
-#else
-            this.translationService = translationService;
-            this.imageProxyService = imageProxyService;
-            Gfriends = gfriends;
-#endif
             this.providerManager = providerManager;
             _jsonSerializer = jsonSerializer;
             _appPaths = appPaths;
             client = new HttpClientEx(client => client.BaseAddress = new Uri(base_url));
+
+            // 从Plugin实例获取服务
+            translationService = Plugin.Instance.TranslationService;
+            imageProxyService = Plugin.Instance.ImageProxyService;
+            Gfriends = new Gfriends(logManager, jsonSerializer);
         }
 
         public int Order => 4;

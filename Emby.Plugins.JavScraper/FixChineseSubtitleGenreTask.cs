@@ -13,11 +13,7 @@ using System.IO;
 using MediaBrowser.Controller.Entities.Movies;
 using Emby.Plugins.JavScraper.Configuration;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 namespace Emby.Plugins.JavScraper
 {
@@ -36,13 +32,8 @@ namespace Emby.Plugins.JavScraper
         private readonly IFileSystem _fileSystem;
         private readonly ILogger _logger;
 
-        public FixChineseSubtitleGenreTask(
-#if __JELLYFIN__
-            ILoggerFactory logManager
-#else
-            ILogManager logManager
-#endif
-            , ILibraryManager libraryManager, IJsonSerializer _jsonSerializer, IApplicationPaths appPaths,
+        public FixChineseSubtitleGenreTask(ILogManager logManager, ILibraryManager libraryManager,
+            IJsonSerializer _jsonSerializer, IApplicationPaths appPaths,
             IProviderManager providerManager,
             ILibraryMonitor libraryMonitor,
             IFileSystem fileSystem)
@@ -142,11 +133,7 @@ namespace Emby.Plugins.JavScraper
             {
                 var name = Path.GetFileNameWithoutExtension(fileInfo.FullName);
                 var files = _fileSystem.GetFilePaths(Path.GetDirectoryName(fileInfo.FullName));
-                return files.Any(v => v.StartsWith(name, StringComparison.OrdinalIgnoreCase) && _libraryManager.IsSubtitleFile(v
-#if !__JELLYFIN__
-                    .AsSpan()
-#endif
-                    ));
+                return files.Any(v => v.StartsWith(name, StringComparison.OrdinalIgnoreCase) && _libraryManager.IsSubtitleFile(v.AsSpan()));
             }
             catch (Exception ex)
             {
@@ -190,11 +177,7 @@ namespace Emby.Plugins.JavScraper
         {
             try
             {
-                return _libraryManager.IsVideoFile(fileInfo.FullName
-#if !__JELLYFIN__
-                    .AsSpan()
-#endif
-                    );
+                return _libraryManager.IsVideoFile(fileInfo.FullName.AsSpan());
             }
             catch (Exception ex)
             {

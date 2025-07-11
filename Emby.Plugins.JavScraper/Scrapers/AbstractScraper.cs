@@ -1,11 +1,7 @@
 ﻿using Emby.Plugins.JavScraper.Http;
 using HtmlAgilityPack;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using System;
 using System.Collections.Generic;

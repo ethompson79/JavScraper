@@ -78,27 +78,6 @@ namespace Emby.Plugins.JavScraper.Scrapers
             return null;
         }
 
-#if __JELLYFIN__
-        /// <summary>
-        /// 获取日期
-        /// </summary>
-        /// <returns></returns>
-        public DateTime? GetDate()
-        {
-            if (string.IsNullOrEmpty(Date))
-                return null;
-            if (DateTime.TryParseExact(Date, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out DateTime result6))
-            {
-                return result6.ToUniversalTime();
-            }
-            else if (DateTime.TryParse(Date, CultureInfo.InvariantCulture, DateTimeStyles.AssumeLocal, out result6))
-            {
-                return result6.ToUniversalTime();
-            }
-            return null;
-        }
-#else
-
         /// <summary>
         /// 获取日期
         /// </summary>
@@ -117,7 +96,5 @@ namespace Emby.Plugins.JavScraper.Scrapers
             }
             return null;
         }
-
-#endif
     }
 }

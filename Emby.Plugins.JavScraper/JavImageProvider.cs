@@ -14,11 +14,7 @@ using MediaBrowser.Model.Configuration;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Providers;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using MediaBrowser.Model.Serialization;
 
@@ -37,27 +33,17 @@ namespace Emby.Plugins.JavScraper
         public int Order => 3;
 
         public JavImageProvider(IProviderManager providerManager, ILibraryManager libraryManager,
-#if __JELLYFIN__
-            ILoggerFactory logManager,
-#else
-            ILogManager logManager,
-            ImageProxyService imageProxyService,
-            Gfriends gfriends,
-#endif
-            IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
+            ILogManager logManager, IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
         {
             this.providerManager = providerManager;
             this.libraryManager = libraryManager;
-#if __JELLYFIN__
-            imageProxyService = Plugin.Instance.ImageProxyService;
-            Gfriends = new Gfriends(logManager, _jsonSerializer);
-#else
-            this.imageProxyService = imageProxyService;
-            Gfriends = gfriends;
-#endif
             _logger = logManager.CreateLogger<JavImageProvider>();
             _appPaths = appPaths;
             _jsonSerializer = jsonSerializer;
+
+            // 从Plugin实例获取服务
+            imageProxyService = Plugin.Instance.ImageProxyService;
+            Gfriends = new Gfriends(logManager, jsonSerializer);
         }
 
         public string Name => Plugin.NAME;
@@ -66,10 +52,7 @@ namespace Emby.Plugins.JavScraper
             => imageProxyService.GetImageResponse(url, ImageType.Backdrop, cancellationToken);
 
         public async Task<IEnumerable<RemoteImageInfo>> GetImages(BaseItem item,
-#if !__JELLYFIN__
-            LibraryOptions libraryOptions,
-#endif
-            CancellationToken cancellationToken)
+            LibraryOptions libraryOptions, CancellationToken cancellationToken)
         {
             var list = new List<RemoteImageInfo>();
 

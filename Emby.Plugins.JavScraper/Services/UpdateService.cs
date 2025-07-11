@@ -4,11 +4,7 @@ using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Model.IO;
 
-#if __JELLYFIN__
-using Microsoft.Extensions.Logging;
-#else
 using MediaBrowser.Model.Logging;
-#endif
 
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Services;
@@ -47,12 +43,7 @@ namespace Emby.Plugins.JavScraper.Services
         private HttpClientEx client;
 
         public UpdateService(IFileSystem fileSystem, IHttpClient httpClient, IZipClient zipClient, IJsonSerializer jsonSerializer, IApplicationPaths appPaths,
-#if __JELLYFIN__
-            ILoggerFactory logManager
-#else
-            ILogManager logManager
-#endif
-            )
+            ILogManager logManager)
         {
             this.fileSystem = fileSystem;
             this.httpClient = httpClient;
@@ -84,12 +75,7 @@ namespace Emby.Plugins.JavScraper.Services
                     var data = jsonSerializer.DeserializeFromStream<Rootobject>(await resp.Content.ReadAsStreamAsync());
                     r.UpdateMessage = data.body;
 
-                    string key =
-#if __JELLYFIN__
-                        "Jellyfin";
-#else
-                        "Emby.JavScraper";
-#endif
+                    string key = "Emby.JavScraper";
 
                     foreach (var v in data.assets.Where(o => o.name.IndexOf(key, StringComparison.OrdinalIgnoreCase) >= 0 && o.name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)))
                     {

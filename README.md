@@ -1,11 +1,11 @@
 # Emby.Plugins.JavScraper
-Emby/Jellyfin 的一个日本电影刮削器插件，可以从某些网站抓取影片信息。
+Emby 的一个日本电影刮削器插件，可以从某些网站抓取影片信息。
 
 [https://javscraper.com](https://javscraper.com)
 
 ![Jav Scraper Logo](./Emby.Plugins.JavScraper/thumb.png)
 
-关键字：**_Jav_**, **_Scraper_**, **_Jav Scraper_**, **_Emby Plugins_**, **_Jellyfin Plugins_**, **_JavBus_**, **_JavDB_**, **_FC2_**, **_Japanese_**, **_Adult_**, **_Movie_**, **_Metadata_**, **_刮削器_**, **_插件_**, **_日本_**, **_电影_**, **_元数据_**, **_番号_**
+关键字：**_Jav_**, **_Scraper_**, **_Jav Scraper_**, **_Emby Plugins_**, **_JavBus_**, **_JavDB_**, **_Japanese_**, **_Adult_**, **_Movie_**, **_Metadata_**, **_刮削器_**, **_插件_**, **_日本_**, **_电影_**, **_元数据_**, **_番号_**
 
 # 目录
 - [主要原理](#主要原理)
@@ -39,11 +39,6 @@ Emby/Jellyfin 的一个日本电影刮削器插件，可以从某些网站抓取
 # 支持的采集来源
 - [JavBus](https://www.javbus.com/)
 - [JavDB](https://javdb.com/)
-- [MsgTage](https://www.mgstage.com/)
-- [FC2](https://fc2club.com/)
-- [AVSOX](https://avsox.host/)
-- [Jav123](https://www.jav321.com/)
-- [R18](https://www.r18.com/)
 
 # 如何使用
 

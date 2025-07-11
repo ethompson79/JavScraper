@@ -1,6 +1,4 @@
-﻿#if !__JELLYFIN__
-
-using System;
+﻿using System;
 
 namespace MediaBrowser.Model.Logging
 {
@@ -28,5 +26,3 @@ namespace MediaBrowser.Model.Logging
             => factory.GetLogger(type.FullName);
     }
 }
-
-#endif
