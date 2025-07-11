@@ -196,7 +196,7 @@ namespace Emby.Plugins.JavScraper
                 OriginalTitle = m.OriginalTitle,
                 Genres = m.Genres?.ToArray() ?? new string[] { },
                 SortName = m.Num,
-                ForcedSortName = m.Num,
+
                 ExternalId = m.Num
             };
 

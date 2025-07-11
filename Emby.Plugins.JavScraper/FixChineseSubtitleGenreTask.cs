@@ -133,7 +133,7 @@ namespace Emby.Plugins.JavScraper
             {
                 var name = Path.GetFileNameWithoutExtension(fileInfo.FullName);
                 var files = _fileSystem.GetFilePaths(Path.GetDirectoryName(fileInfo.FullName));
-                return files.Any(v => v.StartsWith(name, StringComparison.OrdinalIgnoreCase) && _libraryManager.IsSubtitleFile(v.AsSpan()));
+                return files.Any(v => v.StartsWith(name, StringComparison.OrdinalIgnoreCase) && _libraryManager.IsSubtitleFile(v));
             }
             catch (Exception ex)
             {
