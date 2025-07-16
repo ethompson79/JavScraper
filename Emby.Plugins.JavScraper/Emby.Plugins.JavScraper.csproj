@@ -4,7 +4,7 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>JavScraper</AssemblyName>
     <Copyright>Copyright © $([System.DateTime]::Now.Year) JavScraper</Copyright>
-    <Version>1.2025.715.23</Version>
+    <Version>1.2025.715.30</Version>
     <PackageProjectUrl>https://github.com/JavScraper/Emby.Plugins.JavScraper</PackageProjectUrl>
     <RepositoryType>Git</RepositoryType>
     <RepositoryUrl>https://github.com/JavScraper/Emby.Plugins.JavScraper.git</RepositoryUrl>

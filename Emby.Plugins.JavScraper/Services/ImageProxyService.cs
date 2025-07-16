@@ -152,11 +152,42 @@ namespace Emby.Plugins.JavScraper.Services
 
                     if (bytes != null && bytes.Length > 0)
                     {
-                        if (type == ImageType.Primary && IsCoverImage(url))
+                        // 详细的封面图裁剪判断逻辑
+                        logger?.Debug($"GetImageResponse缓存路径: 开始封面图裁剪判断 - URL: {url}, Type: {type}");
+
+                        bool isPrimary = type == ImageType.Primary;
+                        bool isCoverImage = IsCoverImage(url);
+
+                        logger?.Debug($"GetImageResponse缓存路径: isPrimary={isPrimary}, isCoverImage={isCoverImage}");
+
+                        if (isPrimary && isCoverImage)
                         {
+                            logger?.Info($"GetImageResponse缓存路径: ✅ 满足裁剪条件 - 封面图作为主图，开始裁剪: {url}");
+                            logger?.Debug($"GetImageResponse缓存路径: 调用CutImage方法，图片大小: {bytes.Length} bytes");
+
                             var ci = await CutImage(bytes, url);
                             if (ci != null)
+                            {
+                                logger?.Info($"GetImageResponse缓存路径: ✅ 封面图裁剪成功，返回裁剪后图片: {url}");
+                                logger?.Debug($"GetImageResponse缓存路径: 裁剪后响应类型: {ci.GetType().Name}");
                                 return ci;
+                            }
+                            else
+                            {
+                                logger?.Warn($"GetImageResponse缓存路径: ❌ 封面图裁剪失败，将返回原图: {url}");
+                            }
+                        }
+                        else if (isCoverImage)
+                        {
+                            logger?.Info($"GetImageResponse缓存路径: ℹ️ 封面图但非Primary类型({type})，返回原图: {url}");
+                        }
+                        else if (isPrimary)
+                        {
+                            logger?.Info($"GetImageResponse缓存路径: ℹ️ Primary类型但非封面图，返回原图: {url}");
+                        }
+                        else
+                        {
+                            logger?.Debug($"GetImageResponse缓存路径: 普通图片，直接返回: {url}");
                         }
 
                         fileExtensionContentTypeProvider.TryGetContentType(url, out var contentType);
@@ -240,24 +271,58 @@ namespace Emby.Plugins.JavScraper.Services
                         logger?.Warn($"GetImageResponse: Downloaded empty content from {url}");
                     }
 
-                    if (type == ImageType.Primary && IsCoverImage(url) && imageBytes != null && imageBytes.Length > 0)
+                    // 详细的封面图裁剪判断逻辑（下载后）
+                    logger?.Debug($"GetImageResponse下载路径: 开始封面图裁剪判断 - URL: {url}, Type: {type}");
+
+                    bool isPrimary = type == ImageType.Primary;
+                    bool isCoverImage = IsCoverImage(url);
+                    bool hasValidBytes = imageBytes != null && imageBytes.Length > 0;
+
+                    logger?.Debug($"GetImageResponse下载路径: isPrimary={isPrimary}, isCoverImage={isCoverImage}, hasValidBytes={hasValidBytes}");
+
+                    if (isPrimary && isCoverImage && hasValidBytes)
                     {
+                        logger?.Info($"GetImageResponse下载路径: ✅ 满足裁剪条件 - 封面图作为主图，开始裁剪: {url}");
+                        logger?.Debug($"GetImageResponse下载路径: 调用CutImage方法，图片大小: {imageBytes.Length} bytes");
+
                         try
                         {
                             var ci = await CutImage(imageBytes, url);
                             if (ci != null)
+                            {
+                                logger?.Info($"GetImageResponse下载路径: ✅ 封面图裁剪成功，返回裁剪后图片: {url}");
+                                logger?.Debug($"GetImageResponse下载路径: 裁剪后响应类型: {ci.GetType().Name}");
                                 return ci;
+                            }
+                            else
+                            {
+                                logger?.Warn($"GetImageResponse下载路径: ❌ 封面图裁剪失败，将返回原图: {url}");
+                            }
                         }
                         catch (Exception ex)
                         {
-                            logger?.Warn($"GetImageResponse: Image cutting failed for {url}: {ex.Message}");
+                            logger?.Error($"GetImageResponse下载路径: ❌ 封面图裁剪异常: {url}, 错误: {ex.Message}");
+                            logger?.Debug($"GetImageResponse下载路径: 异常堆栈: {ex.StackTrace}");
                             // 切图失败，继续使用原图
                         }
+                    }
+                    else if (isCoverImage)
+                    {
+                        logger?.Info($"GetImageResponse下载路径: ℹ️ 封面图但非Primary类型({type})，返回原图: {url}");
+                    }
+                    else if (isPrimary)
+                    {
+                        logger?.Info($"GetImageResponse下载路径: ℹ️ Primary类型但非封面图，返回原图: {url}");
+                    }
+                    else
+                    {
+                        logger?.Debug($"GetImageResponse下载路径: 普通图片，直接返回: {url}");
                     }
 
                     // 如果已读取字节数据，直接使用，否则从响应解析
                     if (imageBytes != null && imageBytes.Length > 0)
                     {
+                        logger?.Info($"GetImageResponse: 返回图片，类型: {type}, 大小: {imageBytes.Length} bytes, URL: {url}");
                         fileExtensionContentTypeProvider.TryGetContentType(url, out var contentType);
                         return new HttpResponseInfo()
                         {
@@ -535,7 +600,10 @@ namespace Emby.Plugins.JavScraper.Services
         private bool IsCoverImage(string url)
         {
             if (string.IsNullOrEmpty(url))
+            {
+                logger?.Debug($"IsCoverImage: URL为空，返回false");
                 return false;
+            }
 
             // 封面图通常包含 "covers" 路径，样品图通常包含 "samples" 路径
             // JavDB: https://c0.jdbstatic.com/covers/xxx.jpg (封面图)
@@ -546,17 +614,29 @@ namespace Emby.Plugins.JavScraper.Services
             bool isCover = url.Contains("/covers/") || url.Contains("/cover/");
             bool isSample = url.Contains("/samples/") || url.Contains("/thumb/");
 
-            logger?.Info($"IsCoverImage: URL={url}, isCover={isCover}, isSample={isSample}");
+            logger?.Debug($"IsCoverImage判定详情: URL={url}");
+            logger?.Debug($"IsCoverImage判定详情: 包含/covers/: {url.Contains("/covers/")}");
+            logger?.Debug($"IsCoverImage判定详情: 包含/cover/: {url.Contains("/cover/")}");
+            logger?.Debug($"IsCoverImage判定详情: 包含/samples/: {url.Contains("/samples/")}");
+            logger?.Debug($"IsCoverImage判定详情: 包含/thumb/: {url.Contains("/thumb/")}");
+            logger?.Debug($"IsCoverImage判定详情: isCover={isCover}, isSample={isSample}");
 
             // 如果明确是样品图，则不裁剪
             if (isSample)
+            {
+                logger?.Info($"IsCoverImage: 检测到样品图，不需要裁剪: {url}");
                 return false;
+            }
 
             // 如果明确是封面图，则裁剪
             if (isCover)
+            {
+                logger?.Info($"IsCoverImage: 检测到封面图，需要裁剪: {url}");
                 return true;
+            }
 
             // 默认情况下，对于Primary类型的图片，如果无法确定类型，则不裁剪
+            logger?.Info($"IsCoverImage: 无法确定图片类型，默认不裁剪: {url}");
             // 这样可以避免错误地裁剪样品图
             return false;
         }
@@ -604,23 +684,9 @@ namespace Emby.Plugins.JavScraper.Services
                             {
                                 logger?.Info($"CutImage: Image needs cutting. Original: {w}x{h}, Target: {w2}x{h}");
                                 
-                                var x = await GetBaiduBodyAnalysisResult(bytes, url);
-                                var start_w = w - w2; //默认右边
-
-                                if (x > 0) //百度人体识别，中心点位置
-                                {
-                                    logger?.Info($"CutImage: Baidu body analysis result: {x}");
-                                    if (x + w2 / 2 > w) //右边
-                                        start_w = w - w2;
-                                    else if (x - w2 / 2 < 0)//左边
-                                        start_w = 0;
-                                    else //居中
-                                        start_w = (int)x - w2 / 2;
-                                }
-                                else
-                                {
-                                    logger?.Info($"CutImage: No body analysis result, using default right alignment");
-                                }
+                                // 删除百度人体API功能，使用简单的居中裁剪策略
+                                var start_w = (w - w2) / 2; // 居中裁剪
+                                logger?.Info($"CutImage: Using center cropping strategy, start_w: {start_w}");
 
                                 try
                                 {
@@ -697,69 +763,40 @@ namespace Emby.Plugins.JavScraper.Services
             }
         }
 
-        /// <summary>
-        /// 获取人脸的中间位置，
-        /// </summary>
-        /// <param name="bytes">图片数据</param>
-        /// <param name="url">图片地址</param>
-        /// <returns></returns>
-        private async Task<double> GetBaiduBodyAnalysisResult(byte[] bytes, string url)
-        {
-            var baidu = Plugin.Instance?.Configuration?.GetBodyAnalysisService(jsonSerializer);
-            if (baidu == null)
-                return 0;
+        // 百度人体API功能已删除，使用简单的居中裁剪策略
 
-            if (string.IsNullOrWhiteSpace(url) == false)
-            {
-                var p = Plugin.Instance.db.ImageFaceCenterPoints.FindById(url)?.point;
-                if (p != null)
-                    return p.Value;
-            }
+        /// <summary>
+        /// 直接从原始URL裁剪图片（不通过代理）
+        /// </summary>
+        /// <param name="originalUrl">原始图片URL</param>
+        /// <returns>裁剪后的图片响应</returns>
+        public async Task<HttpResponseInfo> CutImageFromOriginalUrl(string originalUrl)
+        {
+            logger?.Info($"CutImageFromOriginalUrl: Starting direct cropping for URL: {originalUrl}");
+
             try
             {
-                var r = await baidu.BodyAnalysis(bytes);
-                if (r?.person_info?.Any() != true)
-                    return 0;
+                // 直接从原始URL下载图片
+                using (var response = await client.GetAsync(originalUrl))
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        logger?.Warn($"CutImageFromOriginalUrl: Failed to download image from {originalUrl}, status: {response.StatusCode}");
+                        return null;
+                    }
 
-                //取面积最大的人
-                var p = r.person_info.Where(o => o.location?.score >= 0.1).OrderByDescending(o => o.location?.width * o.location?.height).FirstOrDefault()
-                    ?? r.person_info.FirstOrDefault();
+                    var bytes = await response.Content.ReadAsByteArrayAsync();
+                    logger?.Info($"CutImageFromOriginalUrl: Downloaded {bytes.Length} bytes from {originalUrl}");
 
-                //人数大于15个，且有15个小于最大人脸，则直接用最右边的做封面。其实也可以考虑识别左边的条码，有条码直接取右边，但Emby中实现困难
-                if (p != null && r.person_info.Where(o => o.location?.left < p.location.left).Count() > 15 && r.person_info.Where(o => o.location?.left > p.location.left).Count() < 10)
-                    return Save(p.location.left * 2);
-
-                //鼻子
-                if (p.body_parts.nose?.x > 0)
-                    return Save(p.body_parts.nose.x);
-                //嘴巴
-                if (p.body_parts.left_mouth_corner?.x > 0 && p.body_parts.right_mouth_corner.x > 0)
-                    return Save((p.body_parts.left_mouth_corner.x + p.body_parts.right_mouth_corner.x) / 2);
-
-                //头顶
-                if (p.body_parts.top_head?.x > 0)
-                    return Save(p.body_parts.top_head.x);
-                //颈部
-                if (p.body_parts.neck?.x > 0)
-                    return Save(p.body_parts.neck.x);
+                    // 使用现有的裁剪逻辑
+                    return await CutImage(bytes, originalUrl);
+                }
             }
             catch (Exception ex)
             {
-                // 百度人体分析结果处理失败时记录日志
-                logger?.Debug($"Failed to process Baidu body analysis result: {ex.Message}");
+                logger?.Error($"CutImageFromOriginalUrl: Error processing {originalUrl}: {ex.Message}");
+                return null;
             }
-
-            double Save(double d)
-            {
-                if (string.IsNullOrWhiteSpace(url) == false)
-                {
-                    var item = new ImageFaceCenterPoint() { url = url, point = d, created = DateTime.Now };
-                    Plugin.Instance.db.ImageFaceCenterPoints.Upsert(item);
-                }
-                return d;
-            }
-
-            return 0;
         }
 
         private async Task<HttpResponseInfo> Parse(HttpResponseMessage resp)

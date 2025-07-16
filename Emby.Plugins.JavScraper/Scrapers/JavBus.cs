@@ -151,10 +151,23 @@ namespace Emby.Plugins.JavScraper.Scrapers
         {
             try
             {
-                log?.Debug($"JavBus: Requesting URL: {requestUri}");
-                
+                // 智能URL处理：检查是否已经是完整URL
+                string fullUrl;
+                if (requestUri.StartsWith("http://") || requestUri.StartsWith("https://"))
+                {
+                    // 已经是完整URL，直接使用（如DMM链接）
+                    fullUrl = requestUri;
+                    log?.Info($"JavBus: 使用完整URL: {fullUrl}");
+                }
+                else
+                {
+                    // 相对路径，与BaseUrl拼接
+                    fullUrl = BaseUrl.TrimEnd('/') + requestUri;
+                    log?.Info($"JavBus: 从BaseUrl构建URL: {fullUrl}");
+                }
+
                 // 使用增强的HTTP请求方法
-                var response = await SafeHttpGetAsync(BaseUrl + requestUri);
+                var response = await SafeHttpGetAsync(fullUrl);
                 if (!response.IsSuccessStatusCode)
                 {
                     log?.Warn($"JavBus: HTTP request failed with status: {response.StatusCode}");
@@ -305,10 +318,37 @@ namespace Emby.Plugins.JavScraper.Scrapers
                     
                     // 检查是否成功绕过年龄验证
                     var finalLower = finalHtml.ToLower();
-                    if (!finalLower.Contains("age verification") && !finalLower.Contains("年龄验证") && finalHtml.Length > 5000)
+
+                    // 检查是否仍然是年龄验证页面
+                    bool hasAgeVerification = finalLower.Contains("age verification") || finalLower.Contains("年龄验证");
+
+                    // 检查是否是错误页面
+                    bool hasError = finalLower.Contains("404") || finalLower.Contains("not found") || finalLower.Contains("error");
+
+                    // 使用测试工具验证的严格检查逻辑
+                    log?.Debug($"JavBus: 年龄验证检查 - hasAgeVerification: {hasAgeVerification}, hasError: {hasError}, length: {finalHtml.Length}");
+
+                    // 基于测试工具的严格验证：如果仍有年龄验证或页面太短，则失败
+                    if (hasAgeVerification || finalHtml.Length < 5000)
                     {
-                        log?.Info($"JavBus: 年龄验证绕过成功!");
+                        log?.Warn($"JavBus: 年龄验证绕过失败，页面长度: {finalHtml.Length}");
+
+                        // 显示页面片段用于调试
+                        var preview = finalHtml.Length > 500 ? finalHtml.Substring(0, 500) : finalHtml;
+                        log?.Debug($"JavBus: 页面预览: {preview.Replace("\n", " ").Replace("\r", "")}");
+                        return null;
+                    }
+
+                    // 如果没有错误且页面长度合理，则成功
+                    if (!hasError)
+                    {
+                        log?.Info($"JavBus: 年龄验证绕过成功! 页面长度: {finalHtml.Length}");
                         return finalHtml;
+                    }
+                    else
+                    {
+                        log?.Warn($"JavBus: 页面包含错误内容，绕过失败");
+                        return null;
                     }
                 }
                 
@@ -329,24 +369,69 @@ namespace Emby.Plugins.JavScraper.Scrapers
         /// <returns></returns>
         protected override async Task<List<JavVideoIndex>> DoQyery(List<JavVideoIndex> ls, string key)
         {
+            log?.Info($"JavBus DoQuery: 开始搜索关键字: {key}");
+            log?.Info($"JavBus DoQuery: 当前BaseUrl: {BaseUrl}");
+
+            // 检查BaseUrl是否正确设置
+            if (string.IsNullOrEmpty(BaseUrl))
+            {
+                log?.Error($"JavBus DoQuery: BaseUrl未设置！");
+                return ls;
+            }
+
             //https://www.javbus.cloud/search/33&type=1
             //https://www.javbus.cloud/uncensored/search/33&type=0&parent=uc
-            var doc = await GetHtmlDocumentAsync($"/search/{key}&type=1");
+            var searchUrl = $"/search/{key}&type=1";
+            var fullUrl = BaseUrl.TrimEnd('/') + searchUrl;
+            log?.Info($"JavBus DoQuery: 构建完整搜索URL: {fullUrl}");
+
+            log?.Debug($"JavBus DoQuery: 调用GetHtmlDocumentAsync获取搜索页面");
+            var doc = await GetHtmlDocumentAsync(searchUrl);
+
             if (doc != null)
             {
-                ParseIndex(ls, doc);
+                log?.Info($"JavBus DoQuery: ✅ 成功获取搜索页面HTML，开始解析");
+                log?.Debug($"JavBus DoQuery: HTML文档节点数: {doc.DocumentNode?.ChildNodes?.Count ?? 0}");
 
-                //判断是否有 无码的影片
-                var node = doc.DocumentNode.SelectSingleNode("//a[contains(@href,'/uncensored/search/')]");
-                if (node != null)
+                int beforeCount = ls.Count;
+                ParseIndex(ls, doc);
+                int afterCount = ls.Count;
+                int foundCount = afterCount - beforeCount;
+
+                log?.Info($"JavBus DoQuery: ✅ 解析完成，本次找到 {foundCount} 个结果，总计 {afterCount} 个结果");
+
+                if (foundCount > 0)
                 {
-                    var t = node.InnerText;
-                    var ii = t.Split('/');
-                    //没有
-                    if (ii.Length > 2 && ii[1].Trim().StartsWith("0"))
-                        return ls;
+                    log?.Debug($"JavBus DoQuery: 找到的结果详情:");
+                    for (int i = beforeCount; i < afterCount && i < beforeCount + 5; i++)
+                    {
+                        var item = ls[i];
+                        log?.Debug($"JavBus DoQuery:   [{i - beforeCount + 1}] {item.Num} - {item.Title}");
+                    }
+                    if (foundCount > 5)
+                    {
+                        log?.Debug($"JavBus DoQuery:   ... 还有 {foundCount - 5} 个结果");
+                    }
                 }
             }
+            else
+            {
+                log?.Error($"JavBus DoQuery: ❌ 获取搜索页面HTML失败，URL: {fullUrl}");
+                log?.Debug($"JavBus DoQuery: GetHtmlDocumentAsync返回null，可能原因：网络错误、年龄验证失败、页面不存在");
+                return ls;
+            }
+
+            //判断是否有 无码的影片
+            var node = doc.DocumentNode.SelectSingleNode("//a[contains(@href,'/uncensored/search/')]");
+            if (node != null)
+            {
+                var t = node.InnerText;
+                var ii = t.Split('/');
+                //没有
+                if (ii.Length > 2 && ii[1].Trim().StartsWith("0"))
+                    return ls;
+            }
+
             doc = await GetHtmlDocumentAsync($"/uncensored/search/{key}&type=1");
             ParseIndex(ls, doc);
 
@@ -667,30 +752,50 @@ namespace Emby.Plugins.JavScraper.Scrapers
         {
             try
             {
-                log?.Info($"JavBus: 开始刮削 URL: {url}");
+                log?.Info($"JavBus Get: 🎬 开始刮削详细信息 - URL: {url}");
+                log?.Debug($"JavBus Get: 当前BaseUrl: {BaseUrl}");
 
-                // 从完整URL中提取相对路径
-                string relativePath = url;
-                if (url.StartsWith(BaseUrl))
+                // 智能URL处理 - 支持完整URL和相对路径
+                string requestPath;
+                if (url.StartsWith("http"))
                 {
-                    relativePath = url.Substring(BaseUrl.Length);
-                    if (!relativePath.StartsWith("/"))
-                        relativePath = "/" + relativePath;
+                    log?.Debug($"JavBus Get: 检测到完整URL，提取路径部分");
+                    var uri = new Uri(url);
+                    requestPath = uri.PathAndQuery;
+                    log?.Debug($"JavBus Get: 提取的路径: {requestPath}");
+                }
+                else if (url.StartsWith("/"))
+                {
+                    log?.Debug($"JavBus Get: 检测到相对路径，直接使用");
+                    requestPath = url;
+                }
+                else
+                {
+                    log?.Debug($"JavBus Get: 检测到番号，添加前缀");
+                    requestPath = "/" + url;
                 }
 
-                log?.Info($"JavBus: 使用相对路径: {relativePath}");
-                var doc = await GetHtmlDocumentAsync(relativePath);
+                log?.Info($"JavBus Get: 📡 使用请求路径: {requestPath}");
+                log?.Debug($"JavBus Get: 调用GetHtmlDocumentAsync获取页面内容");
+
+                var doc = await GetHtmlDocumentAsync(requestPath);
                 if (doc == null)
                 {
-                    log?.Warn($"JavBus: 无法获取HTML文档: {url}");
+                    log?.Error($"JavBus Get: ❌ 无法获取HTML文档: {url}");
+                    log?.Debug($"JavBus Get: GetHtmlDocumentAsync返回null，可能原因：网络错误、年龄验证失败、页面不存在");
                     return null;
                 }
 
+                log?.Info($"JavBus Get: ✅ 成功获取HTML文档，开始解析内容");
+                log?.Debug($"JavBus Get: HTML文档节点数: {doc.DocumentNode?.ChildNodes?.Count ?? 0}");
+
                 // 增强的内容解析 - 使用测试验证的选择器
                 var movie = new JavVideo() { Provider = Name, Url = url };
+                log?.Debug($"JavBus Get: 创建JavVideo对象，Provider: {Name}");
 
                 // 增强的标题提取 - 使用多种选择器
-                var titleSelectors = new[] 
+                log?.Debug($"JavBus Get: 🏷️ 开始提取标题");
+                var titleSelectors = new[]
                 {
                     "//h3[contains(@class, 'title')]",
                     "//div[@class='container']/h3",
@@ -698,16 +803,27 @@ namespace Emby.Plugins.JavScraper.Scrapers
                     "//title"
                 };
 
-                foreach (var selector in titleSelectors)
+                bool titleFound = false;
+                for (int i = 0; i < titleSelectors.Length; i++)
                 {
+                    var selector = titleSelectors[i];
+                    log?.Debug($"JavBus Get: 尝试标题选择器 [{i + 1}/{titleSelectors.Length}]: {selector}");
+
                     var titleNode = doc.DocumentNode.SelectSingleNode(selector);
                     if (titleNode != null && !string.IsNullOrEmpty(titleNode.InnerText?.Trim()))
                     {
-                        var title = CleanTitleEnhanced(titleNode.InnerText);
-                        if (!string.IsNullOrEmpty(title) && !title.ToLower().Contains("javbus") && 
+                        var rawTitle = titleNode.InnerText?.Trim();
+                        log?.Debug($"JavBus Get: 找到原始标题: {rawTitle}");
+
+                        var title = CleanTitleEnhanced(rawTitle);
+                        log?.Debug($"JavBus Get: 清理后标题: {title}");
+
+                        if (!string.IsNullOrEmpty(title) && !title.ToLower().Contains("javbus") &&
                             !title.ToLower().Contains("age verification"))
                         {
                             movie.Title = title;
+                            log?.Info($"JavBus Get: ✅ 成功提取标题: {title}");
+                            titleFound = true;
                             log?.Debug($"JavBus: 标题提取成功: {movie.Title}");
                             break;
                         }
@@ -787,9 +903,29 @@ namespace Emby.Plugins.JavScraper.Scrapers
                 log?.Debug($"JavBus: 标签提取完成: {string.Join(", ", movie.Genres)}");
 
                 // 增强的图片提取 - 优先获取高质量大图
-                log?.Debug($"JavBus: 开始提取图片...");
+                log?.Info($"JavBus Get: 🖼️ 开始提取图片");
+                log?.Debug($"JavBus Get: 调用ExtractImagesEnhanced方法");
+
                 movie.Samples = ExtractImagesEnhanced(doc);
-                log?.Info($"JavBus: 图片提取完成，共 {movie.Samples?.Count ?? 0} 张");
+                int imageCount = movie.Samples?.Count ?? 0;
+
+                if (imageCount > 0)
+                {
+                    log?.Info($"JavBus Get: ✅ 图片提取完成，共 {imageCount} 张");
+                    log?.Debug($"JavBus Get: 图片列表前5张:");
+                    for (int i = 0; i < Math.Min(5, imageCount); i++)
+                    {
+                        log?.Debug($"JavBus Get:   [{i + 1}] {movie.Samples[i]}");
+                    }
+                    if (imageCount > 5)
+                    {
+                        log?.Debug($"JavBus Get:   ... 还有 {imageCount - 5} 张图片");
+                    }
+                }
+                else
+                {
+                    log?.Warn($"JavBus Get: ⚠️ 未提取到任何图片");
+                }
 
                 // 获取封面大图
                 var coverNode = doc.DocumentNode.SelectSingleNode("//a[@class='bigImage']");
@@ -814,12 +950,35 @@ namespace Emby.Plugins.JavScraper.Scrapers
                     movie.Title = movie.Title.Substring(movie.Num.Length).Trim();
                 }
 
-                log?.Info($"JavBus: 刮削完成 - 标题: {movie.Title}, 演员: {movie.Actors?.Count ?? 0}人, 标签: {movie.Genres?.Count ?? 0}个, 图片: {movie.Samples?.Count ?? 0}张");
+                // 最终结果验证和日志
+                log?.Info($"JavBus Get: 🎉 刮削完成，开始结果验证");
+                log?.Debug($"JavBus Get: 最终结果统计:");
+                log?.Debug($"JavBus Get:   标题: {movie.Title ?? "未获取"}");
+                log?.Debug($"JavBus Get:   番号: {movie.Num ?? "未获取"}");
+                log?.Debug($"JavBus Get:   演员: {movie.Actors?.Count ?? 0}人");
+                log?.Debug($"JavBus Get:   标签: {movie.Genres?.Count ?? 0}个");
+                log?.Debug($"JavBus Get:   图片: {movie.Samples?.Count ?? 0}张");
+                log?.Debug($"JavBus Get:   封面: {movie.Cover ?? "未获取"}");
+
+                bool hasTitle = !string.IsNullOrEmpty(movie.Title);
+                bool hasImages = movie.Samples?.Count > 0;
+                bool hasBasicInfo = hasTitle || hasImages;
+
+                if (hasBasicInfo)
+                {
+                    log?.Info($"JavBus Get: ✅ 刮削成功 - 标题: {movie.Title}, 演员: {movie.Actors?.Count ?? 0}人, 标签: {movie.Genres?.Count ?? 0}个, 图片: {movie.Samples?.Count ?? 0}张");
+                }
+                else
+                {
+                    log?.Warn($"JavBus Get: ⚠️ 刮削结果不完整 - 缺少基本信息（标题和图片）");
+                }
+
                 return movie;
             }
             catch (Exception ex)
             {
-                log?.Error($"JavBus: 刮削出错: {ex.Message}");
+                log?.Error($"JavBus Get: ❌ 刮削异常: {ex.Message}");
+                log?.Debug($"JavBus Get: 异常堆栈: {ex.StackTrace}");
                 return null;
             }
         }

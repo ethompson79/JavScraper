@@ -27,6 +27,11 @@ namespace Emby.Plugins.JavScraper
         private readonly ImageProxyService imageProxyService;
         private readonly IJsonSerializer _jsonSerializer;
 
+        // 简单的缓存机制，避免重复刮削
+        private static readonly Dictionary<string, DateTime> _lastScrapeTimes = new Dictionary<string, DateTime>();
+        private static readonly Dictionary<string, List<RemoteSearchResult>> _scrapeCache = new Dictionary<string, List<RemoteSearchResult>>();
+        private static readonly TimeSpan _cacheExpiry = TimeSpan.FromMinutes(5);
+
         public Gfriends Gfriends { get; }
 
         public JavMovieProvider(ILogManager logManager, IProviderManager providerManager,
@@ -368,6 +373,16 @@ namespace Emby.Plugins.JavScraper
             if (javid == null && (searchInfo.Name.Length > 12 || !regexNum.IsMatch(searchInfo.Name)))
                 return list;
             var key = javid?.id ?? searchInfo.Name;
+
+            // 检查缓存
+            if (_scrapeCache.ContainsKey(key) && _lastScrapeTimes.ContainsKey(key))
+            {
+                if (DateTime.Now - _lastScrapeTimes[key] < _cacheExpiry)
+                {
+                    _logger?.Info($"{nameof(GetSearchResults)} 使用缓存结果: {key}");
+                    return _scrapeCache[key];
+                }
+            }
             var allScrapers = Plugin.Instance.Scrapers.ToList();
             var enabledScraperConfigs = Plugin.Instance?.Configuration?.GetEnableScrapers() ?? new List<Configuration.JavScraperConfigItem>();
 
@@ -466,6 +481,11 @@ namespace Emby.Plugins.JavScraper
                 result.SetJavVideoIndex(_jsonSerializer, m);
                 list.Add(result);
             }
+
+            // 保存到缓存
+            _scrapeCache[key] = list;
+            _lastScrapeTimes[key] = DateTime.Now;
+
             return list;
         }
 

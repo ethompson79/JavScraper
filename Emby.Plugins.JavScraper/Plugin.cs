@@ -57,7 +57,7 @@ namespace Emby.Plugins.JavScraper
         /// Gets the name of the plugin
         /// </summary>
         /// <value>The name.</value>
-        public override string Name => "Jav Scraper - 精确匹配修复版 v2025.715.23";
+        public override string Name => "Jav Scraper - 详细日志版 v2025.715.30";
 
         /// <summary>
         /// 描述
@@ -140,7 +140,7 @@ namespace Emby.Plugins.JavScraper
                     EnableInMainMenu = true,
                     MenuSection = "server",
                     MenuIcon = "theaters",
-                    DisplayName = "Jav Scraper - 精确匹配修复版 v2025.715.23",
+                    DisplayName = "Jav Scraper - 详细日志版 v2025.715.30",
                 }
             };
         }

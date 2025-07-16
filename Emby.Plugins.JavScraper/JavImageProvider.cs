@@ -54,22 +54,33 @@ namespace Emby.Plugins.JavScraper
             LibraryOptions libraryOptions, CancellationToken cancellationToken)
         {
             var list = new List<RemoteImageInfo>();
+            var addedUrls = new HashSet<string>(); // 去重集合
 
             async Task<RemoteImageInfo> Add(string url, ImageType type)
             {
+                // 去重检查
+                if (addedUrls.Contains(url))
+                {
+                    _logger?.Debug($"[{item.Name}] 跳过重复图片: {url}");
+                    return null;
+                }
+
+                _logger?.Info($"[{item.Name}] 添加图片: {url}, 类型: {type}");
+
                 var img = new RemoteImageInfo()
                 {
                     Type = type,
                     ProviderName = Name,
-                    // 对于封面图（Primary类型），使用代理URL以支持裁剪
-                    // 对于其他图片，使用原始URL以确保显示
-                    Url = type == ImageType.Primary ?
-                        await imageProxyService.GetLocalUrl(url, type, with_api_url: true) :
-                        url
+                    // 统一使用原始URL，裁剪功能通过CutImageFromOriginalUrl实现
+                    Url = url
                 };
+
+                addedUrls.Add(url);
                 list.Add(img);
                 return img;
             }
+
+
 
             if (item is Movie)
             {
@@ -193,7 +204,7 @@ namespace Emby.Plugins.JavScraper
                     {
                         sampleIndex++;
                         await Add(url, ImageType.Thumb);
-                        _logger?.Info($"[{number}] 添加样品图 {sampleIndex} 作为缩略图: {url}");
+                        // 日志已在Add方法内部输出，此处不需要重复日志
                     }
                 }
             }
