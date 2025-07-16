@@ -50,28 +50,7 @@ namespace Emby.Plugins.JavScraper.Http
                     Proxy = null;
                     break;
 
-                case ProxyTypeEnum.HTTP:
-                case ProxyTypeEnum.HTTPS:
-                case ProxyTypeEnum.Socks5:
-                    {
-                        IWebProxy p = null;
-                        if (string.IsNullOrWhiteSpace(options?.ProxyHost) == false && options?.ProxyPort > 0 && options?.ProxyPort < 65535)
-                        {
-                            var hasCredential = string.IsNullOrWhiteSpace(options.ProxyUserName) == false && string.IsNullOrWhiteSpace(options.ProxyPassword) == false;
-                            if (options.ProxyType == (int)ProxyTypeEnum.HTTP || options.ProxyType == (int)ProxyTypeEnum.HTTPS)
-                            {
-                                var sm = options.ProxyType == (int)ProxyTypeEnum.HTTP ? "http" : "https";
-                                var url = $"{sm}://{options.ProxyHost}:{options.ProxyPort}";
-                                p = hasCredential == false ? new WebProxy(url, true) :
-                                    new WebProxy(url, true, new string[] { }, new NetworkCredential() { UserName = options.ProxyUserName, Password = options.ProxyPassword });
-                            }
-                            else
-                                p = hasCredential == false ? new HttpToSocks5Proxy(options.ProxyHost, options.ProxyPort) :
-                                     new HttpToSocks5Proxy(options.ProxyHost, options.ProxyPort, options.ProxyUserName, options.ProxyPassword);
-                        }
-                        Proxy = p;
-                        break;
-                    }
+
             }
             if (old is HttpToSocks5Proxy s5)
                 s5.StopInternalServer();

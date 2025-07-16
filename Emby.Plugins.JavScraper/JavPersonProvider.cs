@@ -12,9 +12,7 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Providers;
 using MediaBrowser.Model.Entities;
-
 using MediaBrowser.Model.Logging;
-
 using MediaBrowser.Model.Providers;
 using MediaBrowser.Model.Serialization;
 
@@ -25,9 +23,7 @@ namespace Emby.Plugins.JavScraper
         private readonly ILogger _logger;
         private readonly TranslationService translationService;
         private readonly ImageProxyService imageProxyService;
-        private readonly IProviderManager providerManager;
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly IApplicationPaths _appPaths;
         protected HttpClientEx client;
 
         private const string base_url = "https://xslist.org/";
@@ -39,9 +35,7 @@ namespace Emby.Plugins.JavScraper
             IJsonSerializer jsonSerializer, IApplicationPaths appPaths)
         {
             _logger = logManager.CreateLogger<JavPersonProvider>();
-            this.providerManager = providerManager;
             _jsonSerializer = jsonSerializer;
-            _appPaths = appPaths;
             client = new HttpClientEx(client => client.BaseAddress = new Uri(base_url));
 
             // 从Plugin实例获取服务

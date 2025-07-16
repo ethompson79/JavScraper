@@ -37,7 +37,11 @@ namespace Emby.Plugins.JavScraper.Baidu
                 var image = Convert.ToBase64String(image_bytes);
                 return DoPostForm<BaiduBodyAnalysisResult>("https://aip.baidubce.com/rest/2.0/image-classify/v1/body_analysis", new Dictionary<string, string>() { ["image"] = image });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // 记录百度人体分析API调用失败的日志，但不抛出异常以免影响主流程
+                System.Diagnostics.Debug.WriteLine($"Baidu body analysis failed: {ex.Message}");
+            }
 
             return Task.FromResult<BaiduBodyAnalysisResult>(null);
         }

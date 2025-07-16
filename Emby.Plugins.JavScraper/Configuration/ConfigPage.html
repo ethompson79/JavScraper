@@ -1,4 +1,4 @@
-﻿﻿
+﻿
 <!DOCTYPE html>
 <html>
 <head>
@@ -11,9 +11,7 @@
 
                 <div class="verticalSection verticalSection">
                     <div class="sectionTitleContainer flex align-items-center">
-                        <h2 class="sectionTitle">JavScraper 配置</h2><span id="current_version" name="current_version" is="emby-linkbutton" class="emby-button"></span>
-                        <a is="emby-linkbutton" class="raised button-alt headerHelpButton emby-button" target="_blank" href="https://javscraper.com/">帮助</a>
-                        <a is="emby-linkbutton" class="raised button-alt headerHelpButton emby-button" target="_blank" href="https://github.com/JavScraper/Emby.Plugins.JavScraper">源码</a>
+                        <h2 class="sectionTitle">JavScraper 配置 <span style="color: #00d4aa; font-size: 14px;">[v2025.7.14-修复版]</span></h2><span id="current_version" name="current_version" is="emby-linkbutton" class="emby-button"></span>
                     </div>
                 </div>
 
@@ -26,26 +24,7 @@
 
                 <form class="JavScraperConfigurationForm">
 
-                    <div class="infoBanner">
-                        <p class="description1" id="update" name="update">
-                            <a is="emby-linkbutton" target="_blank" href="https://github.com/JavScraper/Emby.Plugins.JavScraper/releases/latest" class="button-link emby-button">正在检查新版本...</a>
-                        </p>
-                        <p class="description1" id="update0" name="update0" style="display: none;">
-                            检查新版本或者更新失败，请稍后再试。<span id="update_error" name="update_error"></span>
-                        </p>
-                        <p class="description1" id="update1" name="update1" style="display: none;">
-                            发现新版本 <span id="latest_version" name="latest_version"></span>  <a is="emby-linkbutton" id="upgrade" name="upgrade" href="#" class="upgrade button-link emby-button">立即更新</a>
-                            <div class="fieldDescription">
-                                <span id="latest_message" name="latest_message"></span>
-                            </div>
-                        </p>
-                        <p class="description1" id="update2" name="update2" style="display: none;">
-                            新版本已经下载，需要重启 Emby/Jellyfin Server 后生效。
-                        </p>
-                        <p class="description1" id="update3" name="update3" style="display: none;">
-                            已经是最新版本了，<a is="emby-linkbutton" target="_blank" href="https://github.com/JavScraper/Emby.Plugins.JavScraper/releases/latest" class="button-link emby-button">版本说明</a>。
-                        </p>
-                    </div>
+
 
                     <div is="emby-collapse" title="代理服务器">
                         <div class="collapseContent">
@@ -53,10 +32,7 @@
                                 <label class="selectLabel" for="selectProxyType">代理服务器类型：</label>
                                 <select is="emby-select" id="selectProxyType" name="selectProxyType" label="代理服务器类型：" class="selectProxyType emby-select-withcolor emby-select">
                                     <option value="-1">禁用</option>
-                                    <option value="0">JsProxy</option>
-                                    <option value="1">HTTP</option>
-                                    <option value="2">HTTPS</option>
-                                    <option value="3">Socks5</option>
+                                    <option value="0">JsProxy (CloudFlare Workers)</option>
                                 </select>
                                 <div class="selectArrowContainer"><div style="visibility:hidden;">0</div><i class="selectArrow md-icon"></i></div>
                             </div>
@@ -77,29 +53,7 @@
                                 </div>
                             </div>
 
-                            <div id="selectProxyTypeProxy" name="selectProxyTypeProxy" class="selectProxyTypeProxy">
-                                <div class="inputContainer">
-                                    <label class="inputLabel inputLabel-float inputLabelUnfocused" for="txtProxyHost">服务器:</label>
-                                    <input is="emby-input" id="txtProxyHost" name="txtProxyHost" class="emby-input" label="服务器：">
-                                </div>
-                                <div class="inputContainer">
-                                    <label class="inputLabel inputLabel-float inputLabelUnfocused" for="txtProxyPort">端口:</label>
-                                    <input is="emby-input" type="number" id="txtProxyPort" name="txtProxyPort" label="端口：" pattern="[0-9]*" required="required" min="1" max="65535" class="emby-input">
-                                </div>
-                                <div class="inputContainer">
-                                    <label class="inputLabel inputLabel-float inputLabelUnfocused" for="txtProxyUserName">用户名:</label>
-                                    <input is="emby-input" id="txtProxyUserName" name="txtProxyUserName" class="emby-input" label="用户名：">
-                                </div>
 
-                                <div class="inputContainer">
-                                    <label class="inputLabel inputLabel-float inputLabelUnfocused" for="txtProxyPassword">密码:</label>
-                                    <input is="emby-input" id="txtProxyPassword" name="txtProxyPassword" class="emby-input" label="密码：">
-                                </div>
-
-                                <div class="fieldDescription">
-                                    用户名和密码，可以为空。
-                                </div>
-                            </div>
 
                             <br />
                             <div>
@@ -126,31 +80,35 @@
                             <div class="checkboxList paperList checkboxList-paperList" id="Scrapers" name="Scrapers">
                                 <div class="listItem listItem-border sortableOption sortItem" data-sort="0">
                                     <label class="listItemCheckboxContainer emby-checkbox-label">
-                                        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" data-codec="a">
-                                        <span class="checkboxLabel">AAAA</span>
+                                        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="JavScraperItem" value="JavBus">
+                                        <span class="checkboxLabel">JavBus</span>
                                     </label>
-                                    <div class="listItemBody two-line listItemBodyText"></div>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon"></i></button>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon"></i></button>
+                                    <div class="listItemBody two-line listItemBodyText">
+                                        <div class="listItemBodyFirstText">
+                                            <label class="inputLabel" for="urlJavBus">地址:</label>
+                                            <input is="emby-input" type="url" name="Url" value="https://www.javbus.com/" class="emby-input" style="width: 300px; margin-left: 10px;">
+                                        </div>
+                                    </div>
+                                    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon">keyboard_arrow_up</i></button>
+                                    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon">keyboard_arrow_down</i></button>
                                 </div>
                                 <div class="listItem listItem-border sortableOption sortItem" data-sort="1">
                                     <label class="listItemCheckboxContainer emby-checkbox-label">
-                                        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" data-codec="b">
-                                        <span class="checkboxLabel">BBBB</span>
+                                        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="JavScraperItem" value="JavDB">
+                                        <span class="checkboxLabel">JavDB</span>
                                     </label>
-                                    <div class="listItemBody two-line listItemBodyText"></div>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon"></i></button>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon"></i></button>
+                                    <div class="listItemBody two-line listItemBodyText">
+                                        <div class="listItemBodyFirstText">
+                                            <label class="inputLabel" for="urlJavDB">地址:</label>
+                                            <input is="emby-input" type="url" name="Url" value="https://javdb.com/" class="emby-input" style="width: 300px; margin-left: 10px;">
+                                        </div>
                                 </div>
-                                <div class="listItem listItem-border sortableOption sortItem" data-sort="2">
-                                    <label class="listItemCheckboxContainer emby-checkbox-label">
-                                        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" data-codec="c">
-                                        <span class="checkboxLabel">CCCC</span>
-                                    </label>
-                                    <div class="listItemBody two-line listItemBodyText"></div>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon"></i></button>
-                                    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon"></i></button>
+                                    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon">keyboard_arrow_up</i></button>
+                                    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon">keyboard_arrow_down</i></button>
                                 </div>
+                            </div>
+                            <div class="fieldDescription">
+                                勾选要启用的刮削器，可以拖拽调整优先级顺序。多个刮削器启用时会进行数据互补。
                             </div>
                         </div>
                     </div>
@@ -371,87 +329,41 @@
                 pluginUniqueId: "0f34b81a-4af7-4719-9958-4cb8f680e7c6"
             };
 
-            $('.upgrade').on('click', function (e) {
-                Dashboard.showLoadingMsg();
-                var page = this;
-                ApiClient.getJSON('/emby/Plugins/JavScraper/Update?update=true').then(function (data) {
-                    console.log(data);
-                    Dashboard.hideLoadingMsg();
-                    var state = data.State;
-                    $('#update', page).attr("style", "display:none;");
-                    $('#update1', page).attr("style", "display:none;");
-                    if (state == 0) {
-                        $('#update0', page).attr("style", "");
-                        $('#update_error', page).text(data.ErrorMessage);
-                    } else if (state == 1) {
-                        $('#update1', page).attr("style", "");
-                        $('#latest_version', page).text('v' + data.LatestVersion);
-                        $('#latest_message', page).html(data.UpdateMessage.replace(/\r\n/g, "<br />").replace(/\n/g, "<br />"));
-                    } else if (state == 2) {
-                        $('#update2', page).attr("style", "");
-                    } else {
-                        $('#update3', page).attr("style", "");
-                    }
-                    if (data.Success == true) {
-                        Dashboard.alert({
-                            title: "下载完成",
-                            message: "新版本已经下载，需要重启 Emby/Jellyfin Server 后生效。"
-                        });
-                    } else {
-                        Dashboard.alert({
-                            title: "下载失败",
-                            message: data.ErrorMessage
-                        });
-                    }
-                });
-            });
+
 
             $('.selectProxyType').on('change', function (e) {
-                if (this.value < 0) {
+                var selectedValue = this.value;
+                console.log('Proxy type changed to:', selectedValue);
+                if (selectedValue < 0) {
                     $('.selectProxyTypeJsProxy').css('display', 'none');
-                    $('.selectProxyTypeProxy').css('display', 'none');
-                } else if (this.value == 0) {
+                } else if (selectedValue == 0) {
                     $('.selectProxyTypeJsProxy').css('display', 'inherit');
-                    $('.selectProxyTypeProxy').css('display', 'none');
-                } else {
-                    $('.selectProxyTypeJsProxy').css('display', 'none');
-                    $('.selectProxyTypeProxy').css('display', 'inherit');
                 }
             });
 
             $('.JavScraperConfigurationPage').on('pageshow', function (event) {
                 Dashboard.showLoadingMsg();
                 var page = this;
-                ApiClient.getJSON('/emby/Plugins/JavScraper/Update').then(function (data) {
-                    console.log(data);
-                    var state = data.State;
-                    $('#update', page).attr("style", "display:none;");
-                    if (state == 0) {
-                        $('#update0', page).attr("style", "");
-                        $('#update_error', page).text(data.ErrorMessage);
-                    } else if (state == 1) {
-                        $('#update1', page).attr("style", "");
-                        $('#latest_version', page).text('v' + data.LatestVersion);
-                        $('#latest_message', page).html(data.UpdateMessage.replace(/\r\n/g, "<br />").replace(/\n/g, "<br />"));
-                    } else if (state == 2) {
-                        $('#update2', page).attr("style", "");
-                    } else {
-                        $('#update3', page).attr("style", "");
-                    }
-                });
                 ApiClient.getPluginConfiguration(JavScraperConfigurationPage.pluginUniqueId).then(function (config) {
+                    console.log('Loading configuration:', config);
                     $('#current_version', page).text("v" + config.Version);
 
-                    //page.querySelector('#chkEnableJsProxy').checked = config.EnableJsProxy;
-                    $('#txtJsProxy', page).val(config.JsProxy).change();
-                    $('#txtJsProxyBypass', page).val(config.JsProxyBypass).change();
+                    // 设置代理类型
+                    var proxyType = config.ProxyType;
+                    if (proxyType === undefined || proxyType === null) proxyType = -1; // 默认禁用
+                    
+                    console.log('Loading proxy config - Type:', proxyType, 'JsProxy:', config.JsProxy);
+                    
+                    $('#selectProxyType', page).val(proxyType);
+                    
+                    // 设置JsProxy URL，不管代理类型如何都要设置值
+                    var jsProxyUrl = config.JsProxy || 'https://j.javscraper.workers.dev/';
+                    $('#txtJsProxy', page).val(jsProxyUrl);
+                    
+                    $('#txtJsProxyBypass', page).val(config.JsProxyBypass || '');
 
-                    $('#txtProxyHost', page).val(config.ProxyHost).change();
-                    $('#txtProxyPort', page).val(config.ProxyPort).change();
-                    $('#txtProxyUserName', page).val(config.ProxyUserName).change();
-                    $('#txtProxyPassword', page).val(config.ProxyPassword).change();
-
-                    $('#selectProxyType', page).val(config.ProxyType).change();
+                    // 触发change事件来显示/隐藏配置区域
+                    $('#selectProxyType', page).trigger('change');
 
                     page.querySelector('#chkEnableX_FORWARDED_FOR').checked = config.EnableX_FORWARDED_FOR;
                     $('#txtX_FORWARDED_FOR', page).val(config.X_FORWARDED_FOR).change();
@@ -483,23 +395,44 @@
                     page.querySelector('#chkEnableActorReplace').checked = config.EnableActorReplace;
                     $('#txtActorReplaceMap', page).val(config.ActorReplaceMap).change();
 
-                    var html = '';
-                    config.Scrapers.forEach(function (e) {
-                        html += '<div class="listItem listItem-border sortableOption sortItem" data-sort="' + e + '">';
-                        html += '    <label class="listItemCheckboxContainer emby-checkbox-label">';
-                        html += '        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="JavScraperItem" ' + (e.Enable ? 'checked' : '') + ' value="' + e.Name + '" >';
-                        html += '        <span class="checkboxLabel" style="width:200px" >' + e.Name + '</span>';
-                        html += '        <input is="emby-input" type="url" name="Url" class="emby-input" label="服务器：" value="' + e.Url + '">';
-                        html += '    </label>';
-                        html += '    <div class="listItemBody two-line listItemBodyText"></div>';
-                        html += '    <button type="button" is="paper-icon-button-light" class="btnViewItemUp btnViewItemMove autoSize paper-icon-button-light" title="上"><i class="md-icon"></i></button>';
-                        html += '    <button type="button" is="paper-icon-button-light" class="btnViewItemDown btnViewItemMove autoSize paper-icon-button-light" title="下"><i class="md-icon"></i></button>';
-                        html += '</div>';
-                        html += '\r\n';
+                    console.log('Loading scrapers configuration');
+                    
+                    // 定义默认的刮削器列表
+                    var defaultScrapers = [
+                        { Name: 'JavBus', Enable: true, Url: 'https://www.javbus.com/' },
+                        { Name: 'JavDB', Enable: true, Url: 'https://javdb.com/' }
+                    ];
+                    
+                    // 使用配置中的数据，如果没有则使用默认数据
+                    var scrapersToUse = defaultScrapers;
+                    if (config.Scrapers && Array.isArray(config.Scrapers) && config.Scrapers.length > 0) {
+                        console.log('Using scrapers from config:', config.Scrapers);
+                        scrapersToUse = config.Scrapers.slice(); // 复制数组
+                    } else {
+                        console.log('Using default scrapers configuration');
+                    }
+                    
+                    // 更新现有的静态HTML元素而不是重新生成
+                    $('input[name="JavScraperItem"]', page).each(function(index) {
+                        var scraperName = $(this).val();
+                        var scraperConfig = scrapersToUse.find(function(s) { return s.Name === scraperName; });
+                        
+                        if (scraperConfig) {
+                            // 设置复选框状态
+                            this.checked = scraperConfig.Enable;
+                            
+                            // 设置URL
+                            var urlInput = $(this).closest('.sortItem').find('input[name="Url"]');
+                            if (urlInput.length > 0) {
+                                urlInput.val(scraperConfig.Url);
+                            }
+                            
+                            console.log('Loaded scraper config:', scraperName, 'Enabled:', scraperConfig.Enable, 'URL:', scraperConfig.Url);
+                        } else {
+                            console.log('No config found for scraper:', scraperName);
+                        }
                     });
-
-                    //console.log(html);
-                    $('#Scrapers', page).empty().append(html);
+                    
                     setButtons();
 
                     Dashboard.hideLoadingMsg();
@@ -510,15 +443,22 @@
                 Dashboard.showLoadingMsg();
                 var form = this;
                 ApiClient.getPluginConfiguration(JavScraperConfigurationPage.pluginUniqueId).then(function (config) {
-                    //config.EnableJsProxy = $('#chkEnableJsProxy').prop('checked');
-                    config.ProxyType = $('#selectProxyType', form).val();
-                    config.JsProxy = $('#txtJsProxy', form).val();
-                    config.JsProxyBypass = $('#txtJsProxyBypass', form).val();
+                    console.log('Saving configuration, current config:', config);
+                    
+                    // 保存代理设置
+                    var proxyType = parseInt($('#selectProxyType', form).val());
+                    if (isNaN(proxyType)) proxyType = -1; // 默认禁用
+                    config.ProxyType = proxyType;
+                    
+                    var jsProxy = $('#txtJsProxy', form).val();
+                    if (!jsProxy || jsProxy.trim() === '') {
+                        jsProxy = 'https://j.javscraper.workers.dev/';
+                    }
+                    config.JsProxy = jsProxy;
+                    
+                    config.JsProxyBypass = $('#txtJsProxyBypass', form).val() || '';
 
-                    config.ProxyHost = $('#txtProxyHost', form).val();
-                    config.ProxyPort = $('#txtProxyPort', form).val();
-                    config.ProxyUserName = $('#txtProxyUserName', form).val();
-                    config.ProxyPassword = $('#txtProxyPassword', form).val();
+                    console.log('Proxy settings - Type:', proxyType, 'JsProxy:', config.JsProxy, 'Bypass:', config.JsProxyBypass);
 
                     config.EnableX_FORWARDED_FOR = $('#chkEnableX_FORWARDED_FOR').prop('checked');
                     config.X_FORWARDED_FOR = $('#txtX_FORWARDED_FOR', form).val();
@@ -556,17 +496,40 @@
 
                     var scrapers = [];
                     $('input[name=JavScraperItem]').each(function (index) {
-                        var scraper = new Object();
-                        scraper.Name = $(this).prop('value');
-                        scraper.Enable = $(this).prop('checked');
-                        scraper.Url = $(this).parent().find('input[name=Url]').prop('value');
+                        var checkbox = $(this);
+                        var sortItem = checkbox.closest('.sortItem');
+                        var urlInput = sortItem.find('input[name=Url]');
+                        var scraper = {
+                            Name: checkbox.prop('value'),
+                            Enable: checkbox.prop('checked'),
+                            Url: urlInput.prop('value') || urlInput.val()
+                        };
+                        console.log('Scraper config:', scraper);
                         scrapers.push(scraper);
                     });
                     config.Scrapers = scrapers;
 
-                    ApiClient.updatePluginConfiguration(JavScraperConfigurationPage.pluginUniqueId, config).then(Dashboard.processPluginConfigurationUpdateResult);
+                    // 强制更新配置版本
+                    config.ConfigurationVersion = new Date().getTime();
+                    
+                    console.log('Final config to save:', config);
+                    ApiClient.updatePluginConfiguration(JavScraperConfigurationPage.pluginUniqueId, config).then(function(result) {
+                        console.log('Configuration saved successfully:', result);
+                        // 显示保存成功提示
+                        require(['toast'], function(toast) {
+                            toast('配置已保存成功！');
+                        });
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                    }).catch(function(error) {
+                        console.error('Failed to save configuration:', error);
+                        // 显示保存失败提示
+                        require(['toast'], function(toast) {
+                            toast('配置保存失败：' + (error.message || error));
+                        });
+                        Dashboard.processPluginConfigurationUpdateResult();
+                    });
                 });
-                // Disable default form submission
+
                 return false;
             });
 

@@ -8,20 +8,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO;
+using System.Net.Http;
 
 namespace Emby.Plugins.JavScraper.Scrapers
 {
     /// <summary>
     /// 头像
     /// </summary>
-    public class Gfriends
+    public class Gfriends : IDisposable
     {
-        protected HttpClientEx client;
-        protected ILogger log;
+        /// <summary>
+        /// 客户端
+        /// </summary>
+        private HttpClientEx client;
+
+        /// <summary>
+        /// JSON序列化器
+        /// </summary>
         private readonly IJsonSerializer _jsonSerializer;
 
         /// <summary>
-        /// 适配器名称
+        /// 日志器
+        /// </summary>
+        private ILogger log;
+
+        /// <summary>
+        /// 名称
         /// </summary>
         public string Name => "gfriends";
 
@@ -29,6 +42,11 @@ namespace Emby.Plugins.JavScraper.Scrapers
         private DateTime last = DateTime.Now.AddDays(-1);
         private readonly SemaphoreSlim locker = new SemaphoreSlim(1, 1);
         private const string base_url = "https://raw.githubusercontent.com/xinxin8816/gfriends/master/";
+        
+        /// <summary>
+        /// 是否已释放资源
+        /// </summary>
+        private bool disposed = false;
 
         public Gfriends(ILogManager logManager, IJsonSerializer jsonSerializer)
         {
@@ -103,6 +121,25 @@ namespace Emby.Plugins.JavScraper.Scrapers
                 }
 
                 return null;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    locker.Dispose();
+                    client?.Dispose();
+                }
+                disposed = true;
             }
         }
     }

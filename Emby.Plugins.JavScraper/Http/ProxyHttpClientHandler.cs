@@ -18,6 +18,9 @@ namespace Emby.Plugins.JavScraper.Http
             ServerCertificateCustomValidationCallback = (message, certificate2, arg3, arg4) => true;
             Proxy = new JavWebProxy();
             UseProxy = true;
+
+            // 启用自动解压缩，解决JavBus乱码问题
+            AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
         }
 
         /// <summary>
@@ -30,6 +33,12 @@ namespace Emby.Plugins.JavScraper.Http
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var cfg = Plugin.Instance.Configuration;
+            var logger = Plugin.Instance?.GetLogger("ProxyHttpClientHandler");
+
+            // 添加调试日志（脱敏处理）
+            logger?.Debug($"HTTP Request: {request.Method} {request.RequestUri?.Host}");
+            var proxyStatus = cfg.EnableJsProxy ? "enabled" : "disabled";
+            logger?.Debug($"JsProxy Config: Status={proxyStatus}, ProxyType={cfg.ProxyType}");
 
             request.Headers.Remove("X-FORWARDED-FOR");
             if (cfg.EnableX_FORWARDED_FOR && !string.IsNullOrWhiteSpace(cfg.X_FORWARDED_FOR) &&
@@ -37,7 +46,7 @@ namespace Emby.Plugins.JavScraper.Http
                 request.Headers.TryAddWithoutValidation("X-FORWARDED-FOR", cfg.X_FORWARDED_FOR);
 
             //mgstage.com 加入年龄认证Cookies
-            if (request.RequestUri.ToString().Contains("mgstage.com") && !(request.Headers.TryGetValues("Cookie", out var cookies) && cookies.Contains("abc=1")))
+            if (request.RequestUri.ToString().Contains("mgstage.com") && !(request.Headers.TryGetValues("Cookie", out var cookies) && cookies.Contains("adc=1")))
                 request.Headers.Add("Cookie", "adc=1");
 
             //dmm.co.jp 加入年龄认证Cookies
@@ -50,6 +59,7 @@ namespace Emby.Plugins.JavScraper.Http
 
             if (cfg.EnableJsProxy == false)
             {
+                logger?.Debug($"JsProxy disabled, sending direct request to: {request.RequestUri?.Host}");
                 if (request.Headers.Referrer == null)
                     request.Headers.Referrer = request.RequestUri;
 
@@ -67,15 +77,19 @@ namespace Emby.Plugins.JavScraper.Http
             var uri_org = new Uri(org_url);
             var bypass = cfg.IsBypassed(uri_org.Host);
 
+                            logger?.Debug($"JsProxy processing: host={new Uri(org_url)?.Host}, bypass={bypass}");
+
             if (bypass)
             {
                 if (url != org_url)
                     request.RequestUri = new Uri(org_url);
+                                    logger?.Debug($"Request bypassed proxy: {request.RequestUri?.Host}");
             }
             else if (url.StartsWith(jsproxy_url, StringComparison.OrdinalIgnoreCase) != true)
             {
                 url = $"{cfg.JsProxy.TrimEnd("/")}/http/{url}";
                 request.RequestUri = new Uri(url);
+                                    logger?.Debug($"Request using proxy: {request.RequestUri?.Host}");
             }
 
             url = request.Headers.Referrer?.ToString();

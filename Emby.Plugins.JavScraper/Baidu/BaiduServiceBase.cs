@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 namespace Baidu.AI
 {
     /// <summary>
-    /// 基础服务
+    /// 百度接口基类
     /// </summary>
-    public abstract class BaiduServiceBase
+    public abstract class BaiduServiceBase : IDisposable
     {
         /// <summary>
-        /// ApiKey
+        /// AppKey
         /// </summary>
-        public string ApiKey { get; }
+        public string AppKey { get; }
 
         /// <summary>
         /// SecretKey
@@ -30,6 +30,11 @@ namespace Baidu.AI
         protected HttpClient client;
         private SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
         private readonly IJsonSerializer jsonSerializer;
+        
+        /// <summary>
+        /// 是否已释放资源
+        /// </summary>
+        private bool disposed = false;
 
         /// <summary>
         ///
@@ -38,12 +43,12 @@ namespace Baidu.AI
         /// <param name="secretKey"></param>
         protected BaiduServiceBase(string apiKey, string secretKey, IJsonSerializer jsonSerializer)
         {
-            ApiKey = apiKey;
+            AppKey = apiKey;
             SecretKey = secretKey;
             this.jsonSerializer = jsonSerializer;
+
             client = new HttpClient();
-            client.DefaultRequestHeaders.Accept.Clear();
-            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36");
         }
 
         /// <summary>
@@ -60,7 +65,7 @@ namespace Baidu.AI
                 var dic = new Dictionary<string, string>()
                 {
                     ["grant_type"] = "client_credentials",
-                    ["client_id"] = ApiKey,
+                    ["client_id"] = AppKey,
                     ["client_secret"] = SecretKey
                 };
 
@@ -149,6 +154,34 @@ namespace Baidu.AI
             catch
             {
                 return default;
+            }
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        /// <param name="disposing">是否释放托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    // 释放托管资源
+                    semaphoreSlim.Dispose();
+                    client.Dispose();
+                }
+                // 释放非托管资源
+                disposed = true;
             }
         }
     }

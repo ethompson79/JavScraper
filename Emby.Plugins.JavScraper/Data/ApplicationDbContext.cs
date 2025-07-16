@@ -67,7 +67,11 @@ namespace Emby.Plugins.JavScraper.Data
             {
                 return new ApplicationDbContext(path);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                // 数据库创建失败时记录错误，但返回null让调用方处理
+                System.Diagnostics.Debug.WriteLine($"Failed to create database context at '{path}': {ex.Message}");
+            }
 
             return default;
         }

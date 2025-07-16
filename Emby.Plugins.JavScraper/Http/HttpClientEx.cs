@@ -10,7 +10,7 @@ namespace Emby.Plugins.JavScraper.Http
     /// <summary>
     /// HttpClient
     /// </summary>
-    public class HttpClientEx
+    public class HttpClientEx : IDisposable
     {
         /// <summary>
         /// 客户端初始话方法
@@ -31,6 +31,11 @@ namespace Emby.Plugins.JavScraper.Http
         /// 上一个客户端
         /// </summary>
         private HttpClient client_old = null;
+        
+        /// <summary>
+        /// 是否已释放资源
+        /// </summary>
+        private bool disposed = false;
 
         public HttpClientEx(Action<HttpClient> ac = null)
         {
@@ -44,21 +49,47 @@ namespace Emby.Plugins.JavScraper.Http
         [MethodImpl(MethodImplOptions.Synchronized)]
         public HttpClient GetClient()
         {
+            if (disposed)
+                throw new ObjectDisposedException(nameof(HttpClientEx));
+                
             if (client != null && version == Plugin.Instance.Configuration.ConfigurationVersion)
                 return client;
 
-            if (client_old != null)
+            try
             {
-                client_old.Dispose();
-                client_old = null;
+                if (client_old != null)
+                {
+                    client_old.Dispose();
+                    client_old = null;
+                }
+                client_old = client;
+
+                var handler = new ProxyHttpClientHandler();
+                client = new HttpClient(handler, true);
+                ac?.Invoke(client);
+
+                version = Plugin.Instance.Configuration.ConfigurationVersion;
+                
+                return client;
             }
-            client_old = client;
-
-            var handler = new ProxyHttpClientHandler();
-            client = new HttpClient(handler, true);
-            ac?.Invoke(client);
-
-            return client;
+            catch (Exception ex)
+            {
+                var logger = Plugin.Instance?.GetLogger("HttpClientEx");
+                logger?.Error($"Failed to create HttpClient: {ex.Message}");
+                
+                // 如果创建失败，返回旧的客户端或创建基本客户端
+                if (client_old != null)
+                {
+                    client = client_old;
+                    client_old = null;
+                    return client;
+                }
+                
+                // 最后尝试创建基本HttpClient
+                client = new HttpClient();
+                ac?.Invoke(client);
+                return client;
+            }
         }
 
         public Task<string> GetStringAsync(string requestUri)
@@ -77,5 +108,48 @@ namespace Emby.Plugins.JavScraper.Http
             => GetClient().PostAsync(requestUri, content);
 
         public Uri BaseAddress => GetClient().BaseAddress;
+        
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        
+        /// <summary>
+        /// 释放资源的核心方法
+        /// </summary>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed && disposing)
+            {
+                try
+                {
+                    client?.Dispose();
+                    client_old?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    var logger = Plugin.Instance?.GetLogger("HttpClientEx");
+                    logger?.Warn($"Error disposing HttpClientEx: {ex.Message}");
+                }
+                finally
+                {
+                    client = null;
+                    client_old = null;
+                    disposed = true;
+                }
+            }
+        }
+        
+        /// <summary>
+        /// 析构函数
+        /// </summary>
+        ~HttpClientEx()
+        {
+            Dispose(false);
+        }
     }
 }

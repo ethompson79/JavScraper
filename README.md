@@ -50,18 +50,17 @@ Emby 的一个日本电影刮削器插件，可以从某些网站抓取影片信
 
 ## 插件安装
 - [点击这里下载最新的插件文件](https://github.com/JavScraper/Emby.Plugins.JavScraper/releases)，解压出里面的 **JavScraper.dll** 文件，通过ssh等方式拷贝到 Emby 的插件目录
+- **兼容性**: 支持 Emby Server 4.8.8.0 及以上版本，推荐使用 4.8.10.0 或更高版本
 - 常见的插件目录如下：
-  - 群晖
-    - /volume1/Emby/plugins
-    - /var/packages/EmbyServer/var/plugins
-    - /volume1/@appdata/EmbyServer/plugins
-  - Windows
-    - emby\programdata\plugins
+  - 群晖: `/volume1/@appstore/EmbyServer/releases/x.x.x.x/plugins/`
+  - Docker: `/config/plugins/`
+  - Windows: `%ProgramData%\Emby-Server\plugins`
+  - Linux: `/var/lib/emby/plugins`
 - 需要**重启Emby服务**，插件才生效。
 
 ## 插件更新
-- 打开 **JavScraper** 配置页面的时，会自动检查更新（在页面的最下方）。
-- 如果有更新，则点击**立即更新**，并在**重启 Emby Server** 后生效。
+- 请从 [GitHub Releases](https://github.com/JavScraper/Emby.Plugins.JavScraper/releases) 下载最新版本的插件文件。
+- 替换原有的 **JavScraper.dll** 文件，并**重启 Emby Server** 使更新生效。
 
 ## 配置
 - 在 **服务器** 配置菜单中找到 **Jav Scraper**，或者 **插件** 菜单中找到 **Jav Scraper** 。

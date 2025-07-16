@@ -54,9 +54,9 @@ namespace Emby.Plugins.JavScraper.Services
             client = new HttpClientEx(client => client.DefaultRequestHeaders.UserAgent.TryParseAdd($"JavScraper v{Assembly.GetExecutingAssembly().GetName().Version}"));
         }
 
-        public object Get(GetUpdateInfo request)
+        public async Task<object> Get(GetUpdateInfo request)
         {
-            return Task.Run(() => Do(request)).GetAwaiter().GetResult();
+            return await Do(request);
         }
 
         private async Task<UpdateInfoData> Do(GetUpdateInfo request)
@@ -169,7 +169,12 @@ namespace Emby.Plugins.JavScraper.Services
                 {
                     return string.IsNullOrWhiteSpace(LatestVersion) == false && new Version(LatestVersion) > new Version(PendingLoadVersion ?? "0.0.0.1");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    // 版本比较失败时记录日志但返回false
+                    // 这样不会因为版本格式问题导致更新检查完全失败
+                    System.Diagnostics.Debug.WriteLine($"Version comparison failed: {ex.Message}");
+                }
 
                 return false;
             }

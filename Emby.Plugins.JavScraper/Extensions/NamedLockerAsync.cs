@@ -40,7 +40,6 @@ namespace Emby.Plugins.JavScraper
             finally
             {
                 locker.Release();
-                Thread.Sleep(1);
                 if (locker.CurrentCount == 1)
                 {
                     _lockDict.TryRemove(name, out locker);
@@ -68,7 +67,6 @@ namespace Emby.Plugins.JavScraper
             finally
             {
                 locker.Release();
-                Thread.Sleep(1);
                 if (locker.CurrentCount == 1)
                 {
                     _lockDict.TryRemove(name, out locker);
@@ -112,7 +110,6 @@ namespace Emby.Plugins.JavScraper
             public void Dispose()
             {
                 m_semaphore.Release();
-                Thread.Sleep(1);
                 if (m_semaphore.CurrentCount == 1)
                 {
                     named_locker.RemoveLock(name);

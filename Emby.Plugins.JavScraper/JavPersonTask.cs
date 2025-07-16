@@ -13,7 +13,6 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Tasks;
 using MediaBrowser.Model.Serialization;
-
 using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugins.JavScraper
@@ -23,7 +22,6 @@ namespace Emby.Plugins.JavScraper
         private readonly ILibraryManager libraryManager;
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ImageProxyService imageProxyService;
-        private readonly IProviderManager providerManager;
         private readonly IFileSystem fileSystem;
         private readonly ILogger _logger;
 
@@ -36,7 +34,6 @@ namespace Emby.Plugins.JavScraper
             _logger = logManager.CreateLogger<JavPersonTask>();
             this.libraryManager = libraryManager;
             this._jsonSerializer = _jsonSerializer;
-            this.providerManager = providerManager;
             this.fileSystem = fileSystem;
 
             // 从Plugin实例获取服务
@@ -115,7 +112,10 @@ namespace Emby.Plugins.JavScraper
                 {
                     await person.RefreshMetadata(options, cancellationToken);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    _logger?.Error($"Failed to refresh metadata for person {person.Name}: {ex.Message}");
+                }
                 progress.Report(i * 1.0 / persons.Count * 100);
             }
 

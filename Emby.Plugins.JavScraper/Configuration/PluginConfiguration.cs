@@ -23,9 +23,9 @@ namespace Emby.Plugins.JavScraper.Configuration
         public string Version { get; } = Assembly.GetExecutingAssembly().GetName().Version.ToString();
 
         /// <summary>
-        /// 代理服务器类型
+        /// 代理服务器类型 - 默认不使用代理(直连)
         /// </summary>
-        public int ProxyType { get; set; }
+        public int ProxyType { get; set; } = 0; // 临时强制启用JsProxy进行测试
 
         /// <summary>
         /// 启用代理
@@ -66,25 +66,7 @@ namespace Emby.Plugins.JavScraper.Configuration
             return _jsProxyBypass?.Any(v => host.IndexOf(v, StringComparison.OrdinalIgnoreCase) >= 0) == true;
         }
 
-        /// <summary>
-        /// 代理服务器：主机
-        /// </summary>
-        public string ProxyHost { get; set; } = "127.0.0.1";
 
-        /// <summary>
-        /// 代理服务器：端口
-        /// </summary>
-        public int ProxyPort { get; set; } = 7890;
-
-        /// <summary>
-        /// 代理服务器：用户名
-        /// </summary>
-        public string ProxyUserName { get; set; }
-
-        /// <summary>
-        /// 代理服务器：密码
-        /// </summary>
-        public string ProxyPassword { get; set; }
 
         /// <summary>
         /// 启用 X-FORWARDED-FOR 配置
@@ -167,58 +149,61 @@ namespace Emby.Plugins.JavScraper.Configuration
         private List<JavScraperConfigItem> _scrapers;
 
         /// <summary>
-        /// 刮削器
+        /// 刮削器配置列表
         /// </summary>
-        [XmlArrayItem(ElementName = "Scraper")]
-        public JavScraperConfigItem[] Scrapers
+        public List<JavScraperConfigItem> Scrapers
         {
             get
             {
-                var scrapers = Plugin.Instance.Scrapers;
+                // 如果_scrapers为空，初始化默认配置
                 if (_scrapers?.Any() != true)
-                    _scrapers = scrapers.Select(o => new JavScraperConfigItem() { Name = o.Name, Enable = true, Url = o.DefaultBaseUrl }).ToList();
-                else
                 {
-                    //移除重复的
-                    _scrapers = _scrapers.GroupBy(o => o.Name).Select(o => o.First()).ToList();
-
-                    var names = scrapers.Select(o => o.Name).ToList();
-                    //移除不存在的
-                    _scrapers.RemoveAll(o => !names.Contains(o.Name));
-
-                    //如果url不正确则用默认的
-                    _scrapers.Where(o => !o.Url.IsWebUrl())
-                        .Join(scrapers, o => o.Name, o => o.Name, (o, v) => o.Url = v.DefaultBaseUrl)
-                        .ToArray();
-
-                    var exists = _scrapers.Select(o => o.Name).ToList();
-                    //新增的
-                    var news = scrapers.Where(o => !exists.Contains(o.Name))
-                        .Select(o => new JavScraperConfigItem() { Name = o.Name, Enable = true, Url = o.DefaultBaseUrl })
-                        .ToList();
-
-                    if (news.Any())
-                        _scrapers.AddRange(news);
+                    InitializeDefaultScrapers();
                 }
-
-                return _scrapers?.ToArray();
+                return _scrapers;
             }
             set
             {
-                _scrapers = value?.Where(o => o != null).GroupBy(o => o.Name).Select(o => o.First()).ToList();
-                var scrapers = Plugin.Instance.Scrapers;
-                if (_scrapers?.Any() != true)
-                    _scrapers = scrapers.Select(o => new JavScraperConfigItem() { Name = o.Name, Enable = true, Url = o.DefaultBaseUrl }).ToList();
-                else
+                _scrapers = value?.Where(o => o != null && !string.IsNullOrWhiteSpace(o.Name))
+                    .GroupBy(o => o.Name).Select(o => o.First()).ToList() ?? new List<JavScraperConfigItem>();
+                
+                // 确保至少有默认刮削器
+                if (_scrapers.Count == 0)
                 {
-                    _scrapers.Join(scrapers, o => o.Name, o => o.Name, (o, v) =>
+                    InitializeDefaultScrapers();
+                }
+                
+                // 同步URL到实际刮削器
+                SyncScraperUrls();
+            }
+        }
+
+        /// <summary>
+        /// 初始化默认刮削器配置
+        /// </summary>
+        private void InitializeDefaultScrapers()
+        {
+            _scrapers = new List<JavScraperConfigItem>
+            {
+                new JavScraperConfigItem() { Name = "JavBus", Enable = true, Url = "https://www.javbus.com/" },
+                new JavScraperConfigItem() { Name = "JavDB", Enable = true, Url = "https://javdb.com/" }
+            };
+        }
+
+        /// <summary>
+        /// 同步刮削器URL到实际刮削器实例
+        /// </summary>
+        private void SyncScraperUrls()
+        {
+            if (_scrapers?.Any() == true && Plugin.Instance?.Scrapers != null)
+            {
+                foreach (var item in _scrapers)
+                {
+                    var scraper = Plugin.Instance.Scrapers.FirstOrDefault(s => s.Name == item.Name);
+                    if (scraper != null && !string.IsNullOrEmpty(item.Url) && item.Url.IsWebUrl())
                     {
-                        if (o.Url.IsWebUrl())
-                            v.BaseUrl = o.Url;
-                        else
-                            o.Url = v.DefaultBaseUrl;
-                        return true;
-                    }).ToArray();
+                        scraper.BaseUrl = item.Url;
+                    }
                 }
             }
         }
@@ -227,7 +212,9 @@ namespace Emby.Plugins.JavScraper.Configuration
         /// 获取启用的刮削器，为空表示全部
         /// </summary>
         public List<JavScraperConfigItem> GetEnableScrapers()
-            => _scrapers?.Where(o => o.Enable).ToList();
+        {
+            return Scrapers?.Where(o => o.Enable).ToList() ?? new List<JavScraperConfigItem>();
+        }
 
         #region 百度人体分析
 
@@ -264,7 +251,7 @@ namespace Emby.Plugins.JavScraper.Configuration
             if (EnableBaiduBodyAnalysis == false)
                 return null;
 
-            if (bodyAnalysisService != null && bodyAnalysisService.ApiKey == BaiduBodyAnalysisApiKey && bodyAnalysisService.SecretKey == BaiduBodyAnalysisSecretKey)
+            if (bodyAnalysisService != null && bodyAnalysisService.AppKey == BaiduBodyAnalysisApiKey && bodyAnalysisService.SecretKey == BaiduBodyAnalysisSecretKey)
                 return bodyAnalysisService;
             BaiduBodyAnalysisApiKey = BaiduBodyAnalysisApiKey.Trim();
             BaiduBodyAnalysisSecretKey = BaiduBodyAnalysisSecretKey.Trim();
@@ -691,7 +678,7 @@ Vシネマ:电影放映
 私人攝影:私人摄影
 絲帶:丝带
 送貨上門:送货上门
-素顏:素颜
+素顔:素颜
 套裝:套装
 特典あり（AVベースボール）:特典（AV棒球）
 體驗懺悔:体验忏悔
@@ -853,15 +840,82 @@ Vシネマ:电影放映
         #endregion 演员姓名替换
 
         /// <summary>
-        /// 文件整理配置
-        /// </summary>
-        /// <value>The tv options.</value>
-        public JavOrganizationOptions JavOrganizationOptions { get; set; } = new JavOrganizationOptions();
-
-        /// <summary>
         /// 最后修改时间
         /// </summary>
         public long ConfigurationVersion { get; set; } = DateTime.Now.Ticks;
+
+        /// <summary>
+        /// 验证配置参数的有效性
+        /// </summary>
+        /// <returns>验证错误信息列表，空列表表示验证通过</returns>
+        public List<string> ValidateConfiguration()
+        {
+            var errors = new List<string>();
+            
+            // 验证JsProxy URL
+            if (ProxyType == (int)ProxyTypeEnum.JsProxy && !string.IsNullOrWhiteSpace(JsProxy))
+            {
+                if (!Uri.TryCreate(JsProxy, UriKind.Absolute, out var jsProxyUri) || 
+                    (jsProxyUri.Scheme != "http" && jsProxyUri.Scheme != "https"))
+                {
+                    errors.Add($"JsProxy URL格式无效: {JsProxy}");
+                }
+            }
+            
+            // 验证X-FORWARDED-FOR IP地址
+            if (EnableX_FORWARDED_FOR && !string.IsNullOrWhiteSpace(X_FORWARDED_FOR))
+            {
+                if (!System.Net.IPAddress.TryParse(X_FORWARDED_FOR, out var _))
+                {
+                    errors.Add($"X-FORWARDED-FOR IP地址格式无效: {X_FORWARDED_FOR}");
+                }
+            }
+            
+            // 验证百度API密钥
+            if (EnableBaiduBodyAnalysis)
+            {
+                if (string.IsNullOrWhiteSpace(BaiduBodyAnalysisApiKey))
+                {
+                    errors.Add("百度人体分析API密钥不能为空");
+                }
+                if (string.IsNullOrWhiteSpace(BaiduBodyAnalysisSecretKey))
+                {
+                    errors.Add("百度人体分析Secret密钥不能为空");
+                }
+            }
+            
+            if (EnableBaiduFanyi)
+            {
+                if (string.IsNullOrWhiteSpace(BaiduFanyiApiKey))
+                {
+                    errors.Add("百度翻译API密钥不能为空");
+                }
+                if (string.IsNullOrWhiteSpace(BaiduFanyiSecretKey))
+                {
+                    errors.Add("百度翻译Secret密钥不能为空");
+                }
+            }
+            
+            // 验证标题格式
+            if (string.IsNullOrWhiteSpace(TitleFormat))
+            {
+                errors.Add("标题格式不能为空");
+            }
+            
+            // 验证刮削器配置
+            var enabledScrapers = GetEnableScrapers();
+            if (enabledScrapers?.Count == 0)
+            {
+                errors.Add("至少需要启用一个刮削器");
+            }
+            
+            return errors;
+        }
+        
+        /// <summary>
+        /// 获取配置验证状态
+        /// </summary>
+        public bool IsConfigurationValid => ValidateConfiguration().Count == 0;
     }
 
     /// <summary>
@@ -870,10 +924,7 @@ Vシネマ:电影放映
     public enum ProxyTypeEnum
     {
         None = -1,
-        JsProxy,
-        HTTP,
-        HTTPS,
-        Socks5
+        JsProxy
     }
 
     /// <summary>
@@ -906,19 +957,16 @@ Vシネマ:电影放映
         /// <summary>
         /// 启用
         /// </summary>
-        [XmlAttribute]
         public bool Enable { get; set; }
 
         /// <summary>
         /// 名称
         /// </summary>
-        [XmlAttribute]
         public string Name { get; set; }
 
         /// <summary>
         /// 地址
         /// </summary>
-        [XmlAttribute]
         public string Url { get; set; }
 
         public override string ToString()
